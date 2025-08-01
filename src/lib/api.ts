@@ -2138,5 +2138,31 @@ export const api = {
       console.error("Failed to get provider config:", error);
       throw error;
     }
+  },
+
+  /**
+   * Detects the currently applied provider based on Raw Settings
+   * @returns Promise resolving to provider ID or null if none detected
+   */
+  async detectCurrentProvider(): Promise<string | null> {
+    try {
+      return await invoke<string | null>("detect_current_provider");
+    } catch (error) {
+      console.error("Failed to detect current provider:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Checks if a provider is currently applied (has non-default API configuration)
+   * @returns Promise resolving to boolean indicating if provider is applied
+   */
+  async isProviderApplied(): Promise<boolean> {
+    try {
+      return await invoke<boolean>("is_provider_applied");
+    } catch (error) {
+      console.error("Failed to check if provider is applied:", error);
+      throw error;
+    }
   }
 };

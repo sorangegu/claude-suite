@@ -131,7 +131,7 @@ export const SlashCommandsManager: React.FC<SlashCommandsManagerProps> = ({
       setCommands(loadedCommands);
     } catch (err) {
       console.error("Failed to load slash commands:", err);
-      setError("加载命令失败");
+      setError(t('common.loadCommandsFailed'));
     } finally {
       setLoading(false);
     }
@@ -182,7 +182,7 @@ export const SlashCommandsManager: React.FC<SlashCommandsManagerProps> = ({
       await loadCommands();
     } catch (err) {
       console.error("Failed to save command:", err);
-      setError(err instanceof Error ? err.message : "保存命令失败");
+      setError(err instanceof Error ? err.message : t('common.saveCommandFailed'));
     } finally {
       setSaving(false);
     }
@@ -205,7 +205,7 @@ export const SlashCommandsManager: React.FC<SlashCommandsManagerProps> = ({
       await loadCommands();
     } catch (err) {
       console.error("Failed to delete command:", err);
-      const errorMessage = err instanceof Error ? err.message : "删除命令失败";
+      const errorMessage = err instanceof Error ? err.message : t('common.deleteCommandFailed');
       setError(errorMessage);
     } finally {
       setDeleting(false);
@@ -283,7 +283,7 @@ export const SlashCommandsManager: React.FC<SlashCommandsManagerProps> = ({
   const groupedCommands = filteredCommands.reduce((acc, cmd) => {
     const key = cmd.namespace 
       ? `${cmd.namespace} (${cmd.scope})` 
-      : `${cmd.scope === 'project' ? '项目' : '用户'}命令`;
+      : `${cmd.scope === 'project' ? t('common.projectCommands') : t('common.userCommands')}`;
     if (!acc[key]) {
       acc[key] = [];
     }
@@ -297,17 +297,17 @@ export const SlashCommandsManager: React.FC<SlashCommandsManagerProps> = ({
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold">
-            {scopeFilter === 'project' ? '项目斜杠命令' : '斜杠命令'}
+            {scopeFilter === 'project' ? t('common.projectSlashCommands') : t('common.slashCommands')}
           </h3>
           <p className="text-sm text-muted-foreground mt-1">
             {scopeFilter === 'project' 
-              ? '为此项目创建自定义命令' 
-              : '创建自定义命令以简化您的工作流程'}
+              ? t('common.createCustomCommandsForProject')
+              : t('common.createCustomCommandsWorkflow')}
           </p>
         </div>
         <Button onClick={handleCreateNew} size="sm" className="gap-2">
           <Plus className="h-4 w-4" />
-          新建命令
+          {t('common.newCommand')}
         </Button>
       </div>
 
@@ -330,9 +330,9 @@ export const SlashCommandsManager: React.FC<SlashCommandsManagerProps> = ({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">所有命令</SelectItem>
-              <SelectItem value="project">项目</SelectItem>
-              <SelectItem value="user">用户</SelectItem>
+              <SelectItem value="all">{t('common.allCommands')}</SelectItem>
+              <SelectItem value="project">{t('common.project')}</SelectItem>
+              <SelectItem value="user">{t('common.user')}</SelectItem>
             </SelectContent>
           </Select>
         )}
@@ -357,16 +357,16 @@ export const SlashCommandsManager: React.FC<SlashCommandsManagerProps> = ({
             <Command className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <p className="text-sm text-muted-foreground">
               {searchQuery 
-                ? "未找到命令" 
+                ? t('common.commandsNotFound')
                 : scopeFilter === 'project' 
-                  ? "尚未创建项目命令" 
-                  : "尚未创建命令"}
+                  ? t('common.noProjectCommandsYet')
+                  : t('common.noCommandsYet')}
             </p>
             {!searchQuery && (
               <Button onClick={handleCreateNew} variant="outline" size="sm" className="mt-4">
                 {scopeFilter === 'project' 
-                  ? "创建您的第一个项目命令" 
-                  : "创建您的第一个命令"}
+                  ? t('common.createFirstProjectCommand')
+                  : t('common.createFirstCommand')}
               </Button>
             )}
           </div>
@@ -399,7 +399,7 @@ export const SlashCommandsManager: React.FC<SlashCommandsManagerProps> = ({
                               </code>
                               {command.accepts_arguments && (
                                 <Badge variant="secondary" className="text-xs">
-                                  参数
+                                  {t('common.arguments')}
                                 </Badge>
                               )}
                             </div>
@@ -413,19 +413,19 @@ export const SlashCommandsManager: React.FC<SlashCommandsManagerProps> = ({
                             <div className="flex items-center gap-4 text-xs">
                               {command.allowed_tools.length > 0 && (
                                   <span className="text-muted-foreground">
-                                    {command.allowed_tools.length} 个工具
+                                    {t('common.toolsCount', { count: command.allowed_tools.length })}
                                   </span>
                               )}
                               
                               {command.has_bash_commands && (
                                 <Badge variant="outline" className="text-xs">
-                                  脚本
+                                  {t('common.script')}
                                 </Badge>
                               )}
                               
                               {command.has_file_references && (
                                 <Badge variant="outline" className="text-xs">
-                                  文件
+                                  {t('common.file')}
                                 </Badge>
                               )}
                               
@@ -436,12 +436,12 @@ export const SlashCommandsManager: React.FC<SlashCommandsManagerProps> = ({
                                 {isExpanded ? (
                                   <>
                                     <ChevronDown className="h-3 w-3" />
-                                    隐藏内容
+                                    {t('common.hideContent')}
                                   </>
                                 ) : (
                                   <>
                                     <ChevronRight className="h-3 w-3" />
-                                    显示内容
+                                    {t('common.showContent')}
                                   </>
                                 )}
                               </button>
@@ -500,14 +500,14 @@ export const SlashCommandsManager: React.FC<SlashCommandsManagerProps> = ({
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>
-              {editingCommand ? "编辑命令" : "创建新命令"}
+              {editingCommand ? t('common.editCommand') : t('common.createNewCommand')}
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             {/* Scope */}
             <div className="space-y-2">
-              <Label>作用域</Label>
+              <Label>{t('common.scope')}</Label>
               <Select 
                 value={commandForm.scope} 
                 onValueChange={(value: 'project' | 'user') => setCommandForm(prev => ({ ...prev, scope: value }))}
@@ -521,7 +521,7 @@ export const SlashCommandsManager: React.FC<SlashCommandsManagerProps> = ({
                     <SelectItem value="user">
                       <div className="flex items-center gap-2">
                         <Globe className="h-4 w-4" />
-                        用户（全局）
+                        {t('common.userGlobal')}
                       </div>
                     </SelectItem>
                   )}
@@ -529,7 +529,7 @@ export const SlashCommandsManager: React.FC<SlashCommandsManagerProps> = ({
                     <SelectItem value="project" disabled={!projectPath}>
                       <div className="flex items-center gap-2">
                         <FolderOpen className="h-4 w-4" />
-                        项目
+                        {t('common.project')}
                       </div>
                     </SelectItem>
                   )}
@@ -537,15 +537,15 @@ export const SlashCommandsManager: React.FC<SlashCommandsManagerProps> = ({
               </Select>
               <p className="text-xs text-muted-foreground">
                 {commandForm.scope === 'user' 
-                  ? "在所有项目中可用" 
-                  : "仅在此项目中可用"}
+                  ? t('common.availableInAllProjects')
+                  : t('common.availableOnlyInThisProject')}
               </p>
             </div>
 
             {/* Name and Namespace */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>命令名称*</Label>
+                <Label>{t('common.commandNameRequired')}</Label>
                 <Input
                   placeholder={t('common.commandName')}
                   value={commandForm.name}
@@ -554,7 +554,7 @@ export const SlashCommandsManager: React.FC<SlashCommandsManagerProps> = ({
               </div>
               
               <div className="space-y-2">
-                <Label>命令空间（可选）</Label>
+                <Label>{t('common.commandNamespace')}</Label>
                 <Input
                   placeholder={t('common.commandCategory')}
                   value={commandForm.namespace}
@@ -565,7 +565,7 @@ export const SlashCommandsManager: React.FC<SlashCommandsManagerProps> = ({
 
             {/* Description */}
             <div className="space-y-2">
-              <Label>描述（可选）</Label>
+              <Label>{t('common.descriptionOptional')}</Label>
               <Input
                 placeholder={t('common.commandDescription')}
                 value={commandForm.description}
@@ -575,22 +575,21 @@ export const SlashCommandsManager: React.FC<SlashCommandsManagerProps> = ({
 
             {/* Content */}
             <div className="space-y-2">
-              <Label>命令内容*</Label>
+              <Label>{t('common.commandContentRequired')}</Label>
               <Textarea
                 placeholder={t('common.commandPrompt')}
                 value={commandForm.content}
                 onChange={(e) => setCommandForm(prev => ({ ...prev, content: e.target.value }))}
                 className="min-h-[150px] font-mono text-sm"
               />
-              <p className="text-xs text-muted-foreground">
-                使用 <code>$ARGUMENTS</code> 表示用户输入，<code>@filename</code> 表示文件， 
-                使用 <code>!`command`</code> 表示 bash 命令
-              </p>
+              <p className="text-xs text-muted-foreground" dangerouslySetInnerHTML={{
+                __html: t('common.argumentsUsage')
+              }} />
             </div>
 
             {/* Allowed Tools */}
             <div className="space-y-2">
-              <Label>允许的工具</Label>
+              <Label>{t('common.allowedTools')}</Label>
               <div className="flex flex-wrap gap-2">
                 {COMMON_TOOL_MATCHERS.map((tool) => (
                   <Button
@@ -605,14 +604,14 @@ export const SlashCommandsManager: React.FC<SlashCommandsManagerProps> = ({
                 ))}
               </div>
               <p className="text-xs text-muted-foreground">
-                选择 Claude 可以与此命令一起使用的工具
+                {t('common.selectToolsForClaude')}
               </p>
             </div>
 
             {/* Examples */}
             {!editingCommand && (
               <div className="space-y-2">
-                <Label>示例</Label>
+                <Label>{t('common.examples')}</Label>
                 <div className="grid grid-cols-2 gap-2">
                   {EXAMPLE_COMMANDS.map((example) => (
                     <Button
@@ -633,13 +632,13 @@ export const SlashCommandsManager: React.FC<SlashCommandsManagerProps> = ({
             {/* Preview */}
             {commandForm.name && (
               <div className="space-y-2">
-                <Label>预览</Label>
+                <Label>{t('common.preview')}</Label>
                 <div className="p-3 bg-muted rounded-md">
                   <code className="text-sm">
                     /
                     {commandForm.namespace && `${commandForm.namespace}:`}
                     {commandForm.name}
-                    {commandForm.content.includes('$ARGUMENTS') && ' [参数]'}
+                    {commandForm.content.includes('$ARGUMENTS') && ` ${t('common.argumentsPlaceholder')}`}
                   </code>
                 </div>
               </div>
@@ -648,7 +647,7 @@ export const SlashCommandsManager: React.FC<SlashCommandsManagerProps> = ({
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
-              取消
+              {t('buttons.cancel')}
             </Button>
             <Button
               onClick={handleSave}
@@ -657,12 +656,12 @@ export const SlashCommandsManager: React.FC<SlashCommandsManagerProps> = ({
               {saving ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  保存中...
+                  {t('common.saving')}
                 </>
               ) : (
                 <>
                   <Save className="h-4 w-4 mr-2" />
-                  保存
+                  {t('buttons.save')}
                 </>
               )}
             </Button>
@@ -674,11 +673,11 @@ export const SlashCommandsManager: React.FC<SlashCommandsManagerProps> = ({
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>删除命令</DialogTitle>
+            <DialogTitle>{t('common.deleteCommand')}</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            <p>您确定要删除此命令吗？</p>
+            <p>{t('common.confirmDeleteCommand')}</p>
             {commandToDelete && (
               <div className="p-3 bg-muted rounded-md">
                 <code className="text-sm font-mono">{commandToDelete.full_command}</code>
@@ -688,13 +687,13 @@ export const SlashCommandsManager: React.FC<SlashCommandsManagerProps> = ({
               </div>
             )}
             <p className="text-sm text-muted-foreground">
-              此操作无法撤销。命令文件将被永久删除。
+              {t('common.actionCannotBeUndone')}
             </p>
           </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={cancelDelete} disabled={deleting}>
-              取消
+              {t('buttons.cancel')}
             </Button>
             <Button
               variant="destructive"
@@ -704,12 +703,12 @@ export const SlashCommandsManager: React.FC<SlashCommandsManagerProps> = ({
               {deleting ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  删除中...
+                  {t('common.deleting')}
                 </>
               ) : (
                 <>
                   <Trash2 className="h-4 w-4 mr-2" />
-                  删除
+                  {t('buttons.delete')}
                 </>
               )}
             </Button>

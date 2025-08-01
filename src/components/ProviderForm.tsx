@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { type ProviderConfig } from '@/lib/api';
 import { Toast } from '@/components/ui/toast';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface ProviderFormProps {
   initialData?: ProviderConfig;
@@ -24,6 +25,7 @@ export default function ProviderForm({
   onSubmit, 
   onCancel 
 }: ProviderFormProps) {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState<Omit<ProviderConfig, 'id'>>({
     name: initialData?.name || '',
     description: initialData?.description || '',
@@ -48,16 +50,16 @@ export default function ProviderForm({
 
   const validateForm = (): string | null => {
     if (!formData.name.trim()) {
-      return '请输入代理商名称';
+      return t('common.pleaseEnterProviderName');
     }
     if (!formData.base_url.trim()) {
-      return '请输入API地址';
+      return t('common.pleaseEnterApiAddress');
     }
     if (!formData.base_url.startsWith('http://') && !formData.base_url.startsWith('https://')) {
-      return 'API地址必须以 http:// 或 https:// 开头';
+      return t('common.apiAddressMustStartWith');
     }
     if (!formData.auth_token?.trim() && !formData.api_key?.trim()) {
-      return '请至少填写认证Token或API Key中的一个';
+      return t('common.pleaseEnterAuthTokenOrApiKey');
     }
     return null;
   };
@@ -87,7 +89,10 @@ export default function ProviderForm({
     } catch (error) {
       console.error('Failed to save provider config:', error);
       setToastMessage({ 
-        message: `${isEditing ? '更新' : '添加'}代理商配置失败: ${error}`, 
+        message: t('common.addOrUpdateProviderFailed', { 
+          action: t(isEditing ? 'common.updating' : 'common.adding'),
+          error: error
+        }), 
         type: 'error' 
       });
     } finally {
@@ -108,41 +113,41 @@ export default function ProviderForm({
             <div className="space-y-4">
               <h3 className="text-sm font-medium flex items-center gap-2">
                 <Info className="h-4 w-4" />
-                基本信息
+                {t('common.basicInfo')}
               </h3>
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">代理商名称 *</Label>
+                  <Label htmlFor="name">{t('common.providerNameRequired')}</Label>
                   <Input
                     id="name"
                     value={formData.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
-                    placeholder="例如：OpenAI 官方"
+                    placeholder={t('common.providerNamePlaceholder')}
                     disabled={loading}
                     required
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="description">描述</Label>
+                  <Label htmlFor="description">{t('common.providerDescription')}</Label>
                   <Input
                     id="description"
                     value={formData.description}
                     onChange={(e) => handleInputChange('description', e.target.value)}
-                    placeholder="例如：OpenAI 官方 API"
+                    placeholder={t('common.descriptionPlaceholder')}
                     disabled={loading}
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="base_url">API 地址 *</Label>
+                <Label htmlFor="base_url">{t('common.apiAddressRequired')}</Label>
                 <Input
                   id="base_url"
                   value={formData.base_url}
                   onChange={(e) => handleInputChange('base_url', e.target.value)}
-                  placeholder="https://api.anthropic.com"
+                  placeholder={t('common.apiAddressPlaceholder')}
                   disabled={loading}
                   required
                 />
@@ -153,22 +158,22 @@ export default function ProviderForm({
             <div className="space-y-4 pt-4 border-t">
               <h3 className="text-sm font-medium flex items-center gap-2">
                 <Eye className="h-4 w-4" />
-                认证信息
+                {t('common.authenticationInfo')}
                 <span className="text-xs text-muted-foreground ml-2">
-                  (至少填写一个)
+                  {t('common.atLeastOneRequired')}
                 </span>
               </h3>
               
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="auth_token">认证 Token</Label>
+                  <Label htmlFor="auth_token">{t('common.authToken')}</Label>
                   <div className="relative">
                     <Input
                       id="auth_token"
                       type={showTokens ? "text" : "password"}
                       value={formData.auth_token || ''}
                       onChange={(e) => handleInputChange('auth_token', e.target.value)}
-                      placeholder="sk-ant-..."
+                      placeholder={t('common.authTokenPlaceholder')}
                       disabled={loading}
                     />
                     <Button
@@ -188,14 +193,14 @@ export default function ProviderForm({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="api_key">API Key</Label>
+                  <Label htmlFor="api_key">{t('common.apiKey')}</Label>
                   <div className="relative">
                     <Input
                       id="api_key"
                       type={showTokens ? "text" : "password"}
                       value={formData.api_key || ''}
                       onChange={(e) => handleInputChange('api_key', e.target.value)}
-                      placeholder="sk-..."
+                      placeholder={t('common.apiKeyPlaceholder')}
                       disabled={loading}
                     />
                     <Button
@@ -215,16 +220,16 @@ export default function ProviderForm({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="model">模型名称</Label>
+                  <Label htmlFor="model">{t('common.modelName')}</Label>
                   <Input
                     id="model"
                     value={formData.model || ''}
                     onChange={(e) => handleInputChange('model', e.target.value)}
-                    placeholder="claude-3-5-sonnet-20241022 (可选)"
+                    placeholder={t('common.modelNamePlaceholder')}
                     disabled={loading}
                   />
                   <p className="text-xs text-muted-foreground">
-                    部分代理商需要指定特定的模型名称
+                    {t('common.someProvidersRequireModel')}
                   </p>
                 </div>
               </div>
@@ -240,7 +245,7 @@ export default function ProviderForm({
               disabled={loading}
             >
               <X className="h-4 w-4 mr-2" />
-              取消
+              {t('buttons.cancel')}
             </Button>
             <Button
               type="submit"
@@ -249,12 +254,12 @@ export default function ProviderForm({
               {loading ? (
                 <div className="flex items-center">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  {isEditing ? '更新中...' : '添加中...'}
+                  {isEditing ? t('common.updatingConfig') : t('common.addingConfig')}
                 </div>
               ) : (
                 <>
                   <Save className="h-4 w-4 mr-2" />
-                  {isEditing ? '更新配置' : '添加配置'}
+                  {isEditing ? t('common.updateConfig') : t('common.addConfig')}
                 </>
               )}
             </Button>

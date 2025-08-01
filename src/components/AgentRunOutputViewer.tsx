@@ -28,6 +28,7 @@ import { ErrorBoundary } from './ErrorBoundary';
 import { formatISOTimestamp } from '@/lib/date-utils';
 import { AGENT_ICONS } from './CCAgents';
 import type { ClaudeStreamMessage } from './AgentExecution';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface AgentRunOutputViewerProps {
   /**
@@ -63,6 +64,7 @@ export function AgentRunOutputViewer({
   onOpenFullView,
   className 
 }: AgentRunOutputViewerProps) {
+  const { t } = useTranslation();
   const [messages, setMessages] = useState<ClaudeStreamMessage[]>([]);
   const [rawJsonlOutput, setRawJsonlOutput] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -236,7 +238,7 @@ export function AgentRunOutputViewer({
       }
     } catch (error) {
       console.error('Failed to load agent output:', error);
-      setToast({ message: 'Failed to load agent output', type: 'error' });
+      setToast({ message: t('common.failedToLoadAgentOutput'), type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -286,12 +288,12 @@ export function AgentRunOutputViewer({
       });
 
       const completeUnlisten = await listen<boolean>(`agent-complete:${run.id}`, () => {
-        setToast({ message: 'Agent execution completed', type: 'success' });
+        setToast({ message: t('common.agentExecutionCompleted'), type: 'success' });
         // Don't set status here as the parent component should handle it
       });
 
       const cancelUnlisten = await listen<boolean>(`agent-cancelled:${run.id}`, () => {
-        setToast({ message: 'Agent execution was cancelled', type: 'error' });
+        setToast({ message: t('common.agentExecutionWasCancelled'), type: 'error' });
       });
 
       unlistenRefs.current = [outputUnlisten, errorUnlisten, completeUnlisten, cancelUnlisten];
@@ -305,7 +307,7 @@ export function AgentRunOutputViewer({
     const jsonl = rawJsonlOutput.join('\n');
     await navigator.clipboard.writeText(jsonl);
     setCopyPopoverOpen(false);
-    setToast({ message: 'Output copied as JSONL', type: 'success' });
+    setToast({ message: t('common.outputCopiedAsJsonl'), type: 'success' });
   };
 
   const handleCopyAsMarkdown = async () => {
@@ -362,7 +364,7 @@ export function AgentRunOutputViewer({
 
     await navigator.clipboard.writeText(markdown);
     setCopyPopoverOpen(false);
-    setToast({ message: 'Output copied as Markdown', type: 'success' });
+    setToast({ message: t('common.outputCopiedAsMarkdown'), type: 'success' });
   };
 
   const handleRefresh = async () => {
@@ -383,7 +385,7 @@ export function AgentRunOutputViewer({
       
       if (success) {
         console.log(`[AgentRunOutputViewer] Successfully stopped agent session ${run.id}`);
-        setToast({ message: 'Agent execution stopped', type: 'success' });
+        setToast({ message: t('common.agentExecutionStopped'), type: 'success' });
         
         // Clean up listeners
         unlistenRefs.current.forEach(unlisten => unlisten());
@@ -395,7 +397,7 @@ export function AgentRunOutputViewer({
           type: "result",
           subtype: "error",
           is_error: true,
-          result: "Execution stopped by user",
+          result: t('common.executionStoppedByUser'),
           duration_ms: 0,
           usage: {
             input_tokens: 0,
@@ -416,7 +418,7 @@ export function AgentRunOutputViewer({
     } catch (err) {
       console.error('[AgentRunOutputViewer] Failed to stop agent:', err);
       setToast({ 
-        message: `Failed to stop execution: ${err instanceof Error ? err.message : 'Unknown error'}`, 
+        message: t('common.failedToStopExecution', { error: err instanceof Error ? err.message : 'Unknown error' }), 
         type: 'error' 
       });
     }

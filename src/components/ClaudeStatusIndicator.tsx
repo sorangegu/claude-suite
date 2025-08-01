@@ -214,15 +214,15 @@ export const ClaudeStatusIndicator: React.FC<ClaudeStatusIndicatorProps> = ({
   const getStatusText = () => {
     switch (statusInfo.status) {
       case 'checking':
-        return t('claude.status.checking', 'Checking...');
+        return t('claude.status.checking');
       case 'connected':
-        return t('claude.status.connected', 'Connected');
+        return t('claude.status.connected');
       case 'disconnected':
-        return t('claude.status.disconnected', 'Disconnected');
+        return t('claude.status.disconnected');
       case 'error':
-        return t('claude.status.error', 'Error');
+        return t('claude.status.error');
       default:
-        return t('claude.status.unknown', 'Unknown');
+        return t('claude.status.unknown');
     }
   };
 
@@ -261,7 +261,7 @@ export const ClaudeStatusIndicator: React.FC<ClaudeStatusIndicatorProps> = ({
             <div className="space-y-3">
               {/* Header */}
               <div className="flex items-center justify-between">
-                <h4 className="font-semibold text-sm">Claude CLI Status</h4>
+                <h4 className="font-semibold text-sm">{t('claude.status.title')}</h4>
                 <div className="flex items-center gap-1">
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -276,7 +276,7 @@ export const ClaudeStatusIndicator: React.FC<ClaudeStatusIndicatorProps> = ({
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>{t('claude.status.refresh', 'Refresh status')}</p>
+                      <p>{t('claude.status.refresh')}</p>
                     </TooltipContent>
                   </Tooltip>
                   
@@ -293,7 +293,7 @@ export const ClaudeStatusIndicator: React.FC<ClaudeStatusIndicatorProps> = ({
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>{t('claude.status.settings', 'Claude settings')}</p>
+                        <p>{t('claude.status.settings')}</p>
                       </TooltipContent>
                     </Tooltip>
                   )}
@@ -304,7 +304,7 @@ export const ClaudeStatusIndicator: React.FC<ClaudeStatusIndicatorProps> = ({
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">
-                    {t('claude.status.connection', 'Connection')}:
+                    {t('claude.status.connection')}:
                   </span>
                   <Badge className={cn("text-xs", getStatusColor())}>
                     {getStatusText()}
@@ -314,7 +314,7 @@ export const ClaudeStatusIndicator: React.FC<ClaudeStatusIndicatorProps> = ({
                 {statusInfo.version && (
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">
-                      {t('claude.status.version', 'Version')}:
+                      {t('claude.status.version')}:
                     </span>
                     <Badge variant="outline" className="text-xs">
                       {statusInfo.version}
@@ -325,7 +325,7 @@ export const ClaudeStatusIndicator: React.FC<ClaudeStatusIndicatorProps> = ({
                 {statusInfo.lastChecked && (
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">
-                      {t('claude.status.lastChecked', 'Last checked')}:
+                      {t('claude.status.lastChecked')}:
                     </span>
                     <span className="text-xs text-muted-foreground">
                       {formatLastChecked()}
@@ -347,7 +347,7 @@ export const ClaudeStatusIndicator: React.FC<ClaudeStatusIndicatorProps> = ({
                       <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
                       <div className="flex-1">
                         <p className="text-sm font-medium text-destructive">
-                          {t('claude.status.errorTitle', 'Connection Error')}
+                          {t('claude.status.errorTitle')}
                         </p>
                         <p className="text-xs text-destructive/80 mt-1">
                           {statusInfo.error}
@@ -365,10 +365,10 @@ export const ClaudeStatusIndicator: React.FC<ClaudeStatusIndicatorProps> = ({
                     <Info className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                     <div className="flex-1">
                       <p className="text-sm font-medium">
-                        {t('claude.status.helpTitle', 'Need help?')}
+                        {t('claude.status.helpTitle')}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {t('claude.status.helpText', 'Install Claude CLI using: npm install -g @anthropic/claude')}
+                        {t('claude.status.helpText')}
                       </p>
                     </div>
                   </div>

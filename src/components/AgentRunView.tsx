@@ -21,6 +21,7 @@ import { StreamMessage } from "./StreamMessage";
 import { AGENT_ICONS } from "./CCAgents";
 import type { ClaudeStreamMessage } from "./AgentExecution";
 import { ErrorBoundary } from "./ErrorBoundary";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface AgentRunViewProps {
   /**
@@ -48,6 +49,7 @@ export const AgentRunView: React.FC<AgentRunViewProps> = ({
   onBack,
   className,
 }) => {
+  const { t } = useTranslation();
   const [run, setRun] = useState<AgentRunWithMetrics | null>(null);
   const [messages, setMessages] = useState<ClaudeStreamMessage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -101,7 +103,7 @@ export const AgentRunView: React.FC<AgentRunViewProps> = ({
       }
     } catch (err) {
       console.error("Failed to load run:", err);
-      setError("加载执行详情失败");
+      setError(t('common.loadingExecutionDetails'));
     } finally {
       setLoading(false);
     }
@@ -117,54 +119,54 @@ export const AgentRunView: React.FC<AgentRunViewProps> = ({
     if (!run) return;
     
     let markdown = `# Agent Run: ${run.agent_name}\n\n`;
-    markdown += `**任务：** ${run.task}\n`;
-    markdown += `**模型：** ${run.model}\n`;
-    markdown += `**状态：** ${run.status}\n`;
+    markdown += `**${t('common.task')}：** ${run.task}\n`;
+    markdown += `**${t('common.model')}：** ${run.model}\n`;
+    markdown += `**${t('common.status')}：** ${run.status}\n`;
     if (run.metrics) {
-      markdown += `**令牌：** ${run.metrics.total_tokens || 'N/A'}\n`;
-      markdown += `**成本：** $${run.metrics.cost_usd?.toFixed(4) || 'N/A'}\n`;
+      markdown += `**${t('common.tokens')}：** ${run.metrics.total_tokens || 'N/A'}\n`;
+      markdown += `**${t('common.cost')}：** $${run.metrics.cost_usd?.toFixed(4) || 'N/A'}\n`;
     }
-    markdown += `**日期：** ${new Date(run.created_at).toISOString()}\n\n`;
+    markdown += `**${t('common.date')}：** ${new Date(run.created_at).toISOString()}\n\n`;
     markdown += `---\n\n`;
 
     for (const msg of messages) {
       if (msg.type === "system" && msg.subtype === "init") {
-        markdown += `## 系统初始化\n\n`;
-        markdown += `- 会话 ID: \`${msg.session_id || 'N/A'}\`\n`;
-        markdown += `- 模型: \`${msg.model || 'default'}\`\n`;
-        if (msg.cwd) markdown += `- 工作目录: \`${msg.cwd}\`\n`;
-        if (msg.tools?.length) markdown += `- 工具: ${msg.tools.join(', ')}\n`;
+        markdown += `## ${t('common.systemInitialization')}\n\n`;
+        markdown += `- ${t('common.sessionId')}: \`${msg.session_id || 'N/A'}\`\n`;
+        markdown += `- ${t('common.model')}: \`${msg.model || 'default'}\`\n`;
+        if (msg.cwd) markdown += `- ${t('common.workingDirectory')}: \`${msg.cwd}\`\n`;
+        if (msg.tools?.length) markdown += `- ${t('common.tools')}: ${msg.tools.join(', ')}\n`;
         markdown += `\n`;
       } else if (msg.type === "assistant" && msg.message) {
-        markdown += `## 助手\n\n`;
+        markdown += `## ${t('common.assistant')}\n\n`;
         for (const content of msg.message.content || []) {
           if (content.type === "text") {
             markdown += `${content.text}\n\n`;
           } else if (content.type === "tool_use") {
-            markdown += `### 工具: ${content.name}\n\n`;
+            markdown += `### ${t('common.tool')}: ${content.name}\n\n`;
             markdown += `\`\`\`json\n${JSON.stringify(content.input, null, 2)}\n\`\`\`\n\n`;
           }
         }
         if (msg.message.usage) {
-          markdown += `*令牌: ${msg.message.usage.input_tokens} 输入, ${msg.message.usage.output_tokens} 输出*\n\n`;
+          markdown += `*${t('common.tokensInputOutput', { input: msg.message.usage.input_tokens, output: msg.message.usage.output_tokens })}*\n\n`;
         }
       } else if (msg.type === "user" && msg.message) {
-        markdown += `## 用户\n\n`;
+        markdown += `## ${t('common.user')}\n\n`;
         for (const content of msg.message.content || []) {
           if (content.type === "text") {
             markdown += `${content.text}\n\n`;
           } else if (content.type === "tool_result") {
-            markdown += `### 工具结果\n\n`;
+            markdown += `### ${t('common.toolResult')}\n\n`;
             markdown += `\`\`\`\n${content.content}\n\`\`\`\n\n`;
           }
         }
       } else if (msg.type === "result") {
-        markdown += `## 执行结果\n\n`;
+        markdown += `## ${t('common.executionResult')}\n\n`;
         if (msg.result) {
           markdown += `${msg.result}\n\n`;
         }
         if (msg.error) {
-          markdown += `**错误：** ${msg.error}\n\n`;
+          markdown += `**${t('common.error')}：** ${msg.error}\n\n`;
         }
       }
     }
@@ -196,7 +198,7 @@ export const AgentRunView: React.FC<AgentRunViewProps> = ({
           type: "result",
           subtype: "error",
           is_error: true,
-          result: "用户停止了执行",
+          result: t('common.userStoppedExecutionMessage'),
           duration_ms: 0,
           usage: {
             input_tokens: 0,
@@ -233,8 +235,8 @@ export const AgentRunView: React.FC<AgentRunViewProps> = ({
   if (error || !run) {
     return (
       <div className={cn("flex flex-col items-center justify-center h-full", className)}>
-        <p className="text-destructive mb-4">{error || "未找到运行记录"}</p>
-        <Button onClick={onBack}>返回</Button>
+        <p className="text-destructive mb-4">{error || t('common.runNotFound')}</p>
+        <Button onClick={onBack}>{t('common.goBack')}</Button>
       </div>
     );
   }
@@ -262,7 +264,7 @@ export const AgentRunView: React.FC<AgentRunViewProps> = ({
               {renderIcon(run.agent_icon)}
               <div>
                 <h2 className="text-lg font-semibold">{run.agent_name}</h2>
-                <p className="text-xs text-muted-foreground">执行历史</p>
+                <p className="text-xs text-muted-foreground">{t('common.executionHistory')}</p>
               </div>
             </div>
           </div>
@@ -276,7 +278,7 @@ export const AgentRunView: React.FC<AgentRunViewProps> = ({
                 className="text-destructive hover:text-destructive"
               >
                 <StopCircle className="h-4 w-4 mr-1" />
-                停止
+                {t('common.stop')}
               </Button>
             )}
             
@@ -288,7 +290,7 @@ export const AgentRunView: React.FC<AgentRunViewProps> = ({
                   className="flex items-center gap-2"
                 >
                   <Copy className="h-4 w-4" />
-                  复制输出
+                  {t('common.copyOutput')}
                   <ChevronDown className="h-3 w-3" />
                 </Button>
               }
@@ -300,7 +302,7 @@ export const AgentRunView: React.FC<AgentRunViewProps> = ({
                     className="w-full justify-start"
                     onClick={handleCopyAsJsonl}
                   >
-                    复制为 JSONL
+                    {t('common.copyAsJsonl')}
                   </Button>
                   <Button
                     variant="ghost"
@@ -308,7 +310,7 @@ export const AgentRunView: React.FC<AgentRunViewProps> = ({
                     className="w-full justify-start"
                     onClick={handleCopyAsMarkdown}
                   >
-                    复制为 Markdown
+                    {t('common.copyAsMarkdown')}
                   </Button>
                 </div>
               }

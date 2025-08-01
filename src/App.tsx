@@ -192,12 +192,12 @@ function App() {
     try {
       setLoading(true);
       await api.deleteProject(project.id);
-      setToast({ message: `项目 "${project.path.split('/').pop()}" 已删除成功`, type: "success" });
-      // 重新加载项目列表
+      setToast({ message: t('common.projectDeleted', { name: project.path.split('/').pop() }), type: "success" });
+      // Reload project list
       await loadProjects();
     } catch (err) {
       console.error("Failed to delete project:", err);
-      setToast({ message: `删除项目失败: ${err}`, type: "error" });
+      setToast({ message: t('common.projectDeleteFailed', { error: err }), type: "error" });
       setLoading(false);
     }
   };

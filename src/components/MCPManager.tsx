@@ -9,6 +9,7 @@ import { api, type MCPServer } from "@/lib/api";
 import { MCPServerList } from "./MCPServerList";
 import { MCPAddServer } from "./MCPAddServer";
 import { MCPImportExport } from "./MCPImportExport";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface MCPManagerProps {
   /**
@@ -29,6 +30,7 @@ export const MCPManager: React.FC<MCPManagerProps> = ({
   onBack,
   className,
 }) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("servers");
   const [servers, setServers] = useState<MCPServer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,7 +56,7 @@ export const MCPManager: React.FC<MCPManagerProps> = ({
       setServers(serverList);
     } catch (err) {
       console.error("MCPManager: Failed to load MCP servers:", err);
-      setError("加载 MCP 服务器失败。请确保 Claude Code 已安装。");
+      setError(t('common.loadMcpServersFailed'));
     } finally {
       setLoading(false);
     }
@@ -65,7 +67,7 @@ export const MCPManager: React.FC<MCPManagerProps> = ({
    */
   const handleServerAdded = () => {
     loadServers();
-    setToast({ message: "MCP 服务器添加成功！", type: "success" });
+    setToast({ message: t('common.mcpServerAddedSuccess'), type: "success" });
     setActiveTab("servers");
   };
 
@@ -74,7 +76,7 @@ export const MCPManager: React.FC<MCPManagerProps> = ({
    */
   const handleServerRemoved = (name: string) => {
     setServers(prev => prev.filter(s => s.name !== name));
-    setToast({ message: `服务器 "${name}" 删除成功！`, type: "success" });
+    setToast({ message: t('common.serverDeletedSuccess', { name }), type: "success" });
   };
 
   /**
@@ -84,12 +86,12 @@ export const MCPManager: React.FC<MCPManagerProps> = ({
     loadServers();
     if (failed === 0) {
       setToast({ 
-        message: `成功导入 ${imported} 个服务器！`, 
+        message: t('common.serversImportedSuccess', { imported }), 
         type: "success" 
       });
     } else {
       setToast({ 
-        message: `导入 ${imported} 个服务器，${failed} 个失败`, 
+        message: t('common.serversImportedWithFailures', { imported, failed }), 
         type: "error" 
       });
     }
@@ -117,10 +119,10 @@ export const MCPManager: React.FC<MCPManagerProps> = ({
             <div>
               <h2 className="text-lg font-semibold flex items-center gap-2">
                 <Network className="h-5 w-5 text-blue-500" />
-                MCP 服务器
+                {t('common.mcpServers')}
               </h2>
               <p className="text-xs text-muted-foreground">
-                管理模型上下文协议服务器
+                {t('common.manageMcpServers')}
               </p>
             </div>
           </div>
@@ -152,15 +154,15 @@ export const MCPManager: React.FC<MCPManagerProps> = ({
               <TabsList className="grid w-full max-w-md grid-cols-3">
                 <TabsTrigger value="servers" className="gap-2">
                   <Network className="h-4 w-4 text-blue-500" />
-                  服务器
+                  {t('common.servers')}
                 </TabsTrigger>
                 <TabsTrigger value="add" className="gap-2">
                   <Plus className="h-4 w-4 text-green-500" />
-                  添加服务器
+                  {t('common.addServer')}
                 </TabsTrigger>
                 <TabsTrigger value="import" className="gap-2">
                   <Download className="h-4 w-4 text-purple-500" />
-                  导入/导出
+                  {t('common.importExport')}
                 </TabsTrigger>
               </TabsList>
 

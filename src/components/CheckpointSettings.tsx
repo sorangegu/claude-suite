@@ -14,6 +14,7 @@ import { SelectComponent, type SelectOption } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { api, type CheckpointStrategy } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface CheckpointSettingsProps {
   sessionId: string;
@@ -40,6 +41,7 @@ export const CheckpointSettings: React.FC<CheckpointSettingsProps> = ({
   onClose,
   className,
 }) => {
+  const { t } = useTranslation();
   const [autoCheckpointEnabled, setAutoCheckpointEnabled] = useState(true);
   const [checkpointStrategy, setCheckpointStrategy] = useState<CheckpointStrategy>("smart");
   const [totalCheckpoints, setTotalCheckpoints] = useState(0);
@@ -50,10 +52,10 @@ export const CheckpointSettings: React.FC<CheckpointSettingsProps> = ({
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const strategyOptions: SelectOption[] = [
-    { value: "manual", label: "仅手动" },
-    { value: "per_prompt", label: "每次提示后" },
-    { value: "per_tool_use", label: "工具使用后" },
-    { value: "smart", label: "智能（推荐）" },
+    { value: "manual", label: t('common.manualOnly') },
+    { value: "per_prompt", label: t('common.perPrompt') },
+    { value: "per_tool_use", label: t('common.perToolUse') },
+    { value: "smart", label: t('common.smartRecommended') },
   ];
 
   useEffect(() => {
@@ -71,7 +73,7 @@ export const CheckpointSettings: React.FC<CheckpointSettingsProps> = ({
       setTotalCheckpoints(settings.total_checkpoints);
     } catch (err) {
       console.error("Failed to load checkpoint settings:", err);
-      setError("加载检查点设置失败");
+      setError(t('common.loadCheckpointSettingsFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -91,11 +93,11 @@ export const CheckpointSettings: React.FC<CheckpointSettingsProps> = ({
         checkpointStrategy
       );
       
-      setSuccessMessage("设置保存成功");
+      setSuccessMessage(t('common.settingSavedSuccessfully'));
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
       console.error("Failed to save checkpoint settings:", err);
-      setError("保存检查点设置失败");
+      setError(t('common.saveCheckpointSettingsFailed'));
     } finally {
       setIsSaving(false);
     }
@@ -114,14 +116,14 @@ export const CheckpointSettings: React.FC<CheckpointSettingsProps> = ({
         keepCount
       );
       
-      setSuccessMessage(`已删除 ${removed} 个旧检查点`);
+      setSuccessMessage(t('common.deletedOldCheckpoints', { count: removed }));
       setTimeout(() => setSuccessMessage(null), 3000);
       
       // Reload settings to get updated count
       await loadSettings();
     } catch (err) {
       console.error("Failed to cleanup checkpoints:", err);
-      setError("清理检查点失败");
+      setError(t('common.cleanupCheckpointsFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -137,11 +139,11 @@ export const CheckpointSettings: React.FC<CheckpointSettingsProps> = ({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Settings className="h-5 w-5" />
-          <h3 className="text-lg font-semibold">检查点设置</h3>
+          <h3 className="text-lg font-semibold">{t('common.checkpointSettings')}</h3>
         </div>
         {onClose && (
           <Button variant="ghost" size="sm" onClick={onClose}>
-            关闭
+            {t('common.close')}
           </Button>
         )}
       </div>
@@ -151,9 +153,9 @@ export const CheckpointSettings: React.FC<CheckpointSettingsProps> = ({
         <div className="flex items-start gap-2">
           <AlertCircle className="h-4 w-4 text-yellow-600 mt-0.5" />
           <div className="text-xs">
-            <p className="font-medium text-yellow-600">Experimental Feature</p>
+            <p className="font-medium text-yellow-600">{t('common.experimentalFeature')}</p>
             <p className="text-yellow-600/80">
-              Checkpointing may affect directory structure or cause data loss. Use with caution.
+              {t('common.checkpointingCaution')}
             </p>
           </div>
         </div>
@@ -186,9 +188,9 @@ export const CheckpointSettings: React.FC<CheckpointSettingsProps> = ({
         {/* Auto-checkpoint toggle */}
         <div className="flex items-center justify-between">
           <div className="space-y-0.5">
-            <Label htmlFor="auto-checkpoint">Automatic Checkpoints</Label>
+            <Label htmlFor="auto-checkpoint">{t('common.automaticCheckpoints')}</Label>
             <p className="text-sm text-muted-foreground">
-              Automatically create checkpoints based on the selected strategy
+              {t('common.automaticCheckpointsDescription')}
             </p>
           </div>
           <Switch
@@ -201,7 +203,7 @@ export const CheckpointSettings: React.FC<CheckpointSettingsProps> = ({
 
         {/* Checkpoint strategy */}
         <div className="space-y-2">
-          <Label htmlFor="strategy">Checkpoint Strategy</Label>
+          <Label htmlFor="strategy">{t('common.checkpointStrategy')}</Label>
           <SelectComponent
             value={checkpointStrategy}
             onValueChange={(value: string) => setCheckpointStrategy(value as CheckpointStrategy)}
@@ -209,10 +211,10 @@ export const CheckpointSettings: React.FC<CheckpointSettingsProps> = ({
             disabled={isLoading || !autoCheckpointEnabled}
           />
           <p className="text-xs text-muted-foreground">
-            {checkpointStrategy === "manual" && "Checkpoints will only be created manually"}
-            {checkpointStrategy === "per_prompt" && "A checkpoint will be created after each user prompt"}
-            {checkpointStrategy === "per_tool_use" && "A checkpoint will be created after each tool use"}
-            {checkpointStrategy === "smart" && "Checkpoints will be created after destructive operations"}
+            {checkpointStrategy === "manual" && t('common.manualOnlyDescription')}
+            {checkpointStrategy === "per_prompt" && t('common.perPromptDescription')}
+            {checkpointStrategy === "per_tool_use" && t('common.perToolUseDescription')}
+            {checkpointStrategy === "smart" && t('common.smartDescription')}
           </p>
         </div>
 
@@ -225,12 +227,12 @@ export const CheckpointSettings: React.FC<CheckpointSettingsProps> = ({
           {isSaving ? (
             <>
               <Save className="h-4 w-4 mr-2 animate-spin" />
-              Saving...
+              {t('common.saving')}
             </>
           ) : (
             <>
               <Save className="h-4 w-4 mr-2" />
-              Save Settings
+              {t('common.saveSettings')}
             </>
           )}
         </Button>
@@ -239,9 +241,9 @@ export const CheckpointSettings: React.FC<CheckpointSettingsProps> = ({
       <div className="border-t pt-6 space-y-4">
         <div className="flex items-center justify-between">
           <div className="space-y-0.5">
-            <Label>Storage Management</Label>
+            <Label>{t('common.storageManagement')}</Label>
             <p className="text-sm text-muted-foreground">
-              Total checkpoints: {totalCheckpoints}
+              {t('common.totalCheckpoints')}: {totalCheckpoints}
             </p>
           </div>
           <HardDrive className="h-5 w-5 text-muted-foreground" />
@@ -249,7 +251,7 @@ export const CheckpointSettings: React.FC<CheckpointSettingsProps> = ({
 
         {/* Cleanup settings */}
         <div className="space-y-2">
-          <Label htmlFor="keep-count">Keep Recent Checkpoints</Label>
+          <Label htmlFor="keep-count">{t('common.keepRecentCheckpoints')}</Label>
           <div className="flex gap-2">
             <Input
               id="keep-count"
@@ -267,11 +269,11 @@ export const CheckpointSettings: React.FC<CheckpointSettingsProps> = ({
               disabled={isLoading || totalCheckpoints <= keepCount}
             >
               <Trash2 className="h-4 w-4 mr-2" />
-              Clean Up
+              {t('common.cleanUp')}
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            Remove old checkpoints, keeping only the most recent {keepCount}
+            {t('common.removeOldCheckpoints', { count: keepCount })}
           </p>
         </div>
       </div>

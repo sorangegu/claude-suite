@@ -36,6 +36,7 @@ import { ErrorBoundary } from "./ErrorBoundary";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { AGENT_ICONS } from "./CCAgents";
 import { HooksEditor } from "./HooksEditor";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface AgentExecutionProps {
   /**
@@ -82,6 +83,7 @@ export const AgentExecution: React.FC<AgentExecutionProps> = ({
   onBack,
   className,
 }) => {
+  const { t } = useTranslation();
   const [projectPath, setProjectPath] = useState("");
   const [task, setTask] = useState(agent.default_task || "");
   const [model, setModel] = useState(agent.model || "sonnet");
@@ -268,7 +270,7 @@ export const AgentExecution: React.FC<AgentExecutionProps> = ({
       const selected = await open({
         directory: true,
         multiple: false,
-        title: "选择项目目录"
+        title: t('common.selectProjectDirectory')
       });
       
       if (selected) {
@@ -279,7 +281,7 @@ export const AgentExecution: React.FC<AgentExecutionProps> = ({
       console.error("Failed to select directory:", err);
       // More detailed error logging
       const errorMessage = err instanceof Error ? err.message : String(err);
-      setError(`选择目录失败: ${errorMessage}`);
+      setError(t('common.selectDirectoryFailed', { error: errorMessage }));
     }
   };
 
@@ -333,14 +335,14 @@ export const AgentExecution: React.FC<AgentExecutionProps> = ({
         setIsRunning(false);
         setExecutionStartTime(null);
         if (!event.payload) {
-          setError("智能体执行失败");
+          setError(t('common.agentExecutionFailed'));
         }
       });
 
       const cancelUnlisten = await listen<boolean>(`agent-cancelled:${executionRunId}`, () => {
         setIsRunning(false);
         setExecutionStartTime(null);
-        setError("智能体执行已取消");
+        setError(t('common.agentExecutionCancelled'));
       });
 
       unlistenRefs.current = [outputUnlisten, errorUnlisten, completeUnlisten, cancelUnlisten];
@@ -394,7 +396,7 @@ export const AgentExecution: React.FC<AgentExecutionProps> = ({
         type: "result",
         subtype: "error",
         is_error: true,
-        result: "用户停止执行",
+        result: t('common.userStoppedExecution'),
         duration_ms: elapsedTime * 1000,
         usage: {
           input_tokens: totalTokens,
@@ -428,7 +430,7 @@ export const AgentExecution: React.FC<AgentExecutionProps> = ({
     if (isRunning) {
       // Show confirmation dialog before navigating away during execution
       const shouldLeave = window.confirm(
-        "智能体正在运行。如果您离开，智能体将在后台继续运行。您可以在 CC 智能体的运行会话标签中查看正在运行的会话。\n\n您要继续吗？"
+        t('common.agentStillRunning')
       );
       if (!shouldLeave) {
         return;
@@ -548,7 +550,7 @@ export const AgentExecution: React.FC<AgentExecutionProps> = ({
                       {renderIcon()}
                     </div>
                     <div>
-                      <h1 className="text-xl font-bold">执行: {agent.name}</h1>
+                      <h1 className="text-xl font-bold">{t('common.execution', { name: agent.name })}</h1>
                       <p className="text-sm text-muted-foreground">
                         {model === 'opus' ? 'Claude 4 Opus' : 'Claude 4 Sonnet'}
                       </p>
@@ -563,7 +565,7 @@ export const AgentExecution: React.FC<AgentExecutionProps> = ({
                     disabled={messages.length === 0}
                   >
                     <Maximize2 className="h-4 w-4 mr-2" />
-                    全屏
+                    {t('common.fullscreen')}
                   </Button>
                 </div>
               </div>
@@ -588,12 +590,12 @@ export const AgentExecution: React.FC<AgentExecutionProps> = ({
 
             {/* Project Path */}
             <div className="space-y-2">
-              <Label>项目路径</Label>
+              <Label>{t('common.projectPath')}</Label>
               <div className="flex gap-2">
                 <Input
                   value={projectPath}
                   onChange={(e) => setProjectPath(e.target.value)}
-                  placeholder="选择或输入项目路径"
+                  placeholder={t('common.selectOrEnterProjectPath')}
                   disabled={isRunning}
                   className="flex-1"
                 />
@@ -609,17 +611,17 @@ export const AgentExecution: React.FC<AgentExecutionProps> = ({
                   variant="outline"
                   onClick={handleOpenHooksDialog}
                   disabled={isRunning || !projectPath}
-                  title="配置钩子"
+                  title={t('common.userHooks')}
                 >
                   <Settings2 className="h-4 w-4 mr-2" />
-                  钩子
+                  {t('common.userHooks')}
                 </Button>
               </div>
             </div>
 
             {/* Model Selection */}
             <div className="space-y-2">
-              <Label>模型</Label>
+              <Label>{t('common.model')}</Label>
               <div className="flex gap-3">
                 <button
                   type="button"
@@ -677,12 +679,12 @@ export const AgentExecution: React.FC<AgentExecutionProps> = ({
 
             {/* Task Input */}
             <div className="space-y-2">
-              <Label>任务</Label>
+              <Label>{t('common.task')}</Label>
               <div className="flex gap-2">
                 <Input
                   value={task}
                   onChange={(e) => setTask(e.target.value)}
-                  placeholder="输入智能体的任务"
+                  placeholder={t('placeholders.enterPrompt')}
                   disabled={isRunning}
                   className="flex-1"
                   onKeyPress={(e) => {

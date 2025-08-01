@@ -21,6 +21,7 @@ import { SlashCommandPicker } from "./SlashCommandPicker";
 import { ImagePreview } from "./ImagePreview";
 import { api, type FileEntry, type SlashCommand } from "@/lib/api";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface FloatingPromptInputProps {
   /**
@@ -182,6 +183,61 @@ const FloatingPromptInputInner = (
   }: FloatingPromptInputProps,
   ref: React.Ref<FloatingPromptInputRef>,
 ) => {
+  const { t } = useTranslation();
+  
+  // Get thinking modes with translations
+  const getThinkingModes = (): ThinkingModeConfig[] => [
+    {
+      id: "auto",
+      name: "Auto",
+      description: t('common.letClaudeDecide'),
+      level: 0
+    },
+    {
+      id: "think",
+      name: "Think",
+      description: t('common.basicReasoning'),
+      level: 1,
+      phrase: "think"
+    },
+    {
+      id: "think_hard",
+      name: "深入思考",
+      description: t('common.deeperThinking'),
+      level: 2,
+      phrase: "think hard"
+    },
+    {
+      id: "think_harder",
+      name: "Think Harder",
+      description: t('common.extensiveReasoning'),
+      level: 3,
+      phrase: "think harder"
+    },
+    {
+      id: "ultrathink",
+      name: "Ultrathink",
+      description: t('common.maximumComputation'),
+      level: 4,
+      phrase: "ultrathink"
+    }
+  ];
+  
+  // Get models with translations
+  const getModels = (): Model[] => [
+    {
+      id: "sonnet",
+      name: "Claude 4 Sonnet",
+      description: t('common.fasterEfficient'),
+      icon: <Zap className="h-4 w-4" />
+    },
+    {
+      id: "opus",
+      name: "Claude 4 Opus",
+      description: t('common.moreCapableBetter'),
+      icon: <Sparkles className="h-4 w-4" />
+    }
+  ];
   const [prompt, setPrompt] = useState("");
   const [imageAttachments, setImageAttachments] = useState<ImageAttachment[]>([]);
   const [selectedModel, setSelectedModel] = useState<"sonnet" | "opus">(defaultModel);
@@ -408,7 +464,8 @@ const FloatingPromptInputInner = (
       }
       
       // Append thinking phrase if not auto mode
-      const thinkingMode = THINKING_MODES.find(m => m.id === selectedThinkingMode);
+      const thinkingModes = getThinkingModes();
+      const thinkingMode = thinkingModes.find(m => m.id === selectedThinkingMode);
       if (thinkingMode && thinkingMode.phrase) {
         // 避免使用换行符，改用空格分隔，防止命令行参数解析问题
         const endsWithPunctuation = /[.!?]$/.test(finalPrompt.trim());
@@ -691,18 +748,18 @@ const FloatingPromptInputInner = (
                 console.log('Using blob URL for preview:', blobUrl);
               } else {
                 console.error('Failed to save clipboard image:', result.error);
-                alert('保存剪贴板图片失败，请重试');
+                alert(t('common.saveClipboardImageFailed'));
               }
             } catch (error) {
               console.error('Failed to save clipboard image:', error);
-              alert('保存剪贴板图片失败，请重试');
+              alert(t('common.saveClipboardImageFailed'));
             }
           };
           
           reader.readAsDataURL(blob);
         } catch (error) {
           console.error('Failed to paste image:', error);
-          alert('粘贴图片失败，请重试');
+          alert(t('common.pasteImageFailed'));
         }
       }
     }
@@ -764,7 +821,7 @@ const FloatingPromptInputInner = (
     setPrompt(newPrompt.trim());
   };
 
-  const selectedModelData = MODELS.find(m => m.id === selectedModel) || MODELS[0];
+  const selectedModelData = getModels().find(m => m.id === selectedModel) || getModels()[0];
 
   return (
     <>
@@ -786,7 +843,7 @@ const FloatingPromptInputInner = (
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-medium">Compose your prompt</h3>
+                <h3 className="text-sm font-medium">{t('common.composePrompt')}</h3>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -800,14 +857,14 @@ const FloatingPromptInputInner = (
               {/* Image attachments preview in expanded mode */}
               {imageAttachments.length > 0 && (
                 <div className="border-t border-border pt-2">
-                  <div className="text-sm font-medium mb-2">附件预览</div>
+                  <div className="text-sm font-medium mb-2">{t('common.attachmentPreview')}</div>
                   <div className="flex gap-2 overflow-x-auto">
                     {imageAttachments.map((attachment) => (
                       <div key={attachment.id} className="relative flex-shrink-0 group">
                         <div className="relative w-16 h-16 rounded-md overflow-hidden border border-border">
                           <img
                             src={attachment.previewUrl}
-                            alt="Screenshot preview"
+                            alt={t('common.screenshotPreview')}
                             className="w-full h-full object-cover"
                           />
                           <div className="absolute inset-0 bg-background/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -839,7 +896,7 @@ const FloatingPromptInputInner = (
                 value={prompt}
                 onChange={handleTextChange}
                 onPaste={handlePaste}
-                placeholder="在这里输入您的提示词..."
+                placeholder={t('common.promptInputPlaceholder')}
                 className="min-h-[200px] resize-none"
                 disabled={disabled}
                 onDragEnter={handleDrag}
@@ -851,7 +908,7 @@ const FloatingPromptInputInner = (
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">Model:</span>
+                    <span className="text-xs text-muted-foreground">{t('common.model')}</span>
                     <Button
                       variant="outline"
                       size="sm"
@@ -864,7 +921,7 @@ const FloatingPromptInputInner = (
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">Thinking:</span>
+                    <span className="text-xs text-muted-foreground">{t('common.thinking')}</span>
                     <Popover
                       trigger={
                         <TooltipProvider>
@@ -883,15 +940,15 @@ const FloatingPromptInputInner = (
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p className="font-medium">{THINKING_MODES.find(m => m.id === selectedThinkingMode)?.name || "Auto"}</p>
-                              <p className="text-xs text-muted-foreground">{THINKING_MODES.find(m => m.id === selectedThinkingMode)?.description}</p>
+                              <p className="font-medium">{getThinkingModes().find(m => m.id === selectedThinkingMode)?.name || "Auto"}</p>
+                              <p className="text-xs text-muted-foreground">{getThinkingModes().find(m => m.id === selectedThinkingMode)?.description}</p>
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
                       }
                       content={
                         <div className="w-[280px] p-1">
-                          {THINKING_MODES.map((mode) => (
+                          {getThinkingModes().map((mode) => (
                             <button
                               key={mode.id}
                               onClick={() => {
@@ -964,14 +1021,14 @@ const FloatingPromptInputInner = (
           {/* Image attachments preview */}
           {imageAttachments.length > 0 && (
             <div className="border-b border-border p-4">
-              <div className="text-sm font-medium mb-2">附件预览</div>
+              <div className="text-sm font-medium mb-2">{t('common.attachmentPreview')}</div>
               <div className="flex gap-2 overflow-x-auto">
                 {imageAttachments.map((attachment) => (
                   <div key={attachment.id} className="relative flex-shrink-0 group">
                     <div className="relative w-16 h-16 rounded-md overflow-hidden border border-border">
                       <img
                         src={attachment.previewUrl}
-                        alt="Screenshot preview"
+                        alt={t('common.screenshotPreview')}
                         className="w-full h-full object-cover"
                       />
                       <div className="absolute inset-0 bg-background/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -1016,7 +1073,7 @@ const FloatingPromptInputInner = (
                 }
                 content={
                   <div className="w-[300px] p-1">
-                    {MODELS.map((model) => (
+                    {getModels().map((model) => (
                       <button
                         key={model.id}
                         onClick={() => {
@@ -1060,20 +1117,20 @@ const FloatingPromptInputInner = (
                         >
                           <Brain className="h-4 w-4" />
                           <ThinkingModeIndicator 
-                            level={THINKING_MODES.find(m => m.id === selectedThinkingMode)?.level || 0} 
+                            level={getThinkingModes().find(m => m.id === selectedThinkingMode)?.level || 0} 
                           />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p className="font-medium">{THINKING_MODES.find(m => m.id === selectedThinkingMode)?.name || "Auto"}</p>
-                        <p className="text-xs text-muted-foreground">{THINKING_MODES.find(m => m.id === selectedThinkingMode)?.description}</p>
+                        <p className="font-medium">{getThinkingModes().find(m => m.id === selectedThinkingMode)?.name || "Auto"}</p>
+                        <p className="text-xs text-muted-foreground">{getThinkingModes().find(m => m.id === selectedThinkingMode)?.description}</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 }
                 content={
                   <div className="w-[280px] p-1">
-                    {THINKING_MODES.map((mode) => (
+                    {getThinkingModes().map((mode) => (
                       <button
                         key={mode.id}
                         onClick={() => {
@@ -1114,7 +1171,7 @@ const FloatingPromptInputInner = (
                   onChange={handleTextChange}
                   onKeyDown={handleKeyDown}
                   onPaste={handlePaste}
-                  placeholder={dragActive ? "Drop images here..." : "Ask Claude anything..."}
+                  placeholder={dragActive ? t('common.dropImagesHere') : t('common.askClaudeAnything')}
                   disabled={disabled}
                   className={cn(
                     "min-h-[44px] max-h-[120px] resize-none pr-10",
@@ -1169,7 +1226,7 @@ const FloatingPromptInputInner = (
                 {isLoading ? (
                   <>
                     <Square className="h-4 w-4 mr-1" />
-                    Stop
+                    {t('common.stop')}
                   </>
                 ) : (
                   <Send className="h-4 w-4" />
@@ -1178,7 +1235,7 @@ const FloatingPromptInputInner = (
             </div>
 
             <div className="mt-2 text-xs text-muted-foreground">
-              按 Enter 发送，Shift+Enter 换行{projectPath?.trim() && "，@ 提及文件，/ 输入命令"}，或粘贴图片
+              {projectPath?.trim() ? t('common.keyboardShortcutsWithFiles') : t('common.keyboardShortcuts')}
             </div>
           </div>
         </div>

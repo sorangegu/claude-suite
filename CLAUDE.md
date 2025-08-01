@@ -22,6 +22,9 @@ The application focuses on core Claude CLI integration optimized for Windows use
   - `StorageTab`: SQLite database viewer/editor for agent data and session history
   - `LanguageSelector`: Multi-language support with Chinese-first localization
   - `ClaudeStatusIndicator`: Real-time status monitoring for Claude processes
+  - `ProviderManager`: Provider configuration and management system for API switching
+  - `SlashCommandsManager`: Custom slash command system with autocomplete
+  - `UsageDashboard`: Usage statistics and metrics tracking interface
 
 ### Frontend Architecture
 - **Context Management**: 
@@ -40,6 +43,11 @@ The application focuses on core Claude CLI integration optimized for Windows use
   - `storage.rs`: SQLite database operations with query optimization
   - `slash_commands.rs`: Custom slash command system with autocomplete
   - `usage.rs`: Usage statistics and metrics tracking
+  - `provider.rs`: Provider configuration management for API switching
+- **Additional Modules**:
+  - `checkpoint/`: Session checkpoint management system with state persistence
+  - `process/`: Process registry and lifecycle management
+  - `claude_binary.rs`: Claude CLI binary detection and management
 
 ## Data Flow Architecture
 
@@ -183,19 +191,29 @@ detection: {
 ### Frontend Stack
 - **React 18.3.1**: Latest React with concurrent features
 - **TypeScript 5.6.2**: Enhanced type safety and modern features
-- **Tailwind CSS 4.1.8**: Latest utility-first CSS framework
+- **Tailwind CSS 4.1.8**: Latest utility-first CSS framework with Vite plugin
 - **Tauri 2.1.1**: Modern Rust-based desktop framework
-- **Framer Motion**: Smooth animations and transitions
-- **Radix UI**: Accessible component primitives
-- **i18next**: Comprehensive internationalization
+- **Framer Motion 12.0.0-alpha.1**: Smooth animations and transitions
+- **Radix UI**: Accessible component primitives for dialogs, dropdowns, selects, tabs, tooltips
+- **i18next 25.3.2**: Comprehensive internationalization with browser language detection
+- **React Hook Form 7.54.2**: Form handling with Zod validation
+- **@uiw/react-md-editor**: Markdown editing capabilities
+- **React Syntax Highlighter**: Code syntax highlighting support
 
 ### Backend Stack
 - **Rust 2021 Edition**: Modern Rust with async/await throughout
-- **Tauri 2.x**: Desktop framework with comprehensive plugin system
-- **SQLite (Rusqlite)**: Embedded database with bundled support
+- **Tauri 2.x**: Desktop framework with comprehensive plugin system (shell, dialog, fs, process, updater, notification, clipboard-manager, global-shortcut, http)
+- **SQLite (Rusqlite 0.32)**: Embedded database with bundled support
 - **Tokio**: Async runtime for concurrent operations
+- **Serde**: JSON serialization/deserialization with derive macros
+- **Reqwest 0.12**: HTTP client for API communications
+- **Chrono 0.4**: Date and time handling with serialization
 - **Regex**: Pattern matching for hooks and content processing
-- **Chrono**: Date and time handling with serialization
+- **Anyhow**: Error handling and context management
+- **Base64 0.22**: Encoding for image clipboard operations
+- **UUID 1.6**: Unique identifier generation with v4 and serde features
+- **Tempfile**: Temporary file management for clipboard images
+- **Zstd 0.13**: Compression for data storage optimization
 
 ### Build and Development
 - **Bun**: Primary package manager (REQUIRED for cross-device compatibility)
@@ -232,9 +250,10 @@ detection: {
 - **Image Processing**: Optimized clipboard handling with temporary storage
 
 ### Build Optimizations
-- **Code Splitting**: Manual chunks for vendor libraries and features
-- **Rust Release Optimization**: Aggressive size optimization with LTO and symbol stripping
+- **Code Splitting**: Manual chunks for vendor libraries and features (react-vendor, ui-vendor, editor-vendor, syntax-vendor, tauri, utils)
+- **Rust Release Optimization**: Aggressive size optimization with LTO and symbol stripping (opt-level="z", lto=true, strip=true, panic="abort")
 - **Chunk Size Management**: 2MB warning limit with strategic code splitting
+- **Bundle Analysis**: ESBuild minification with CSS minification and ES2020 target
 
 ## Testing Strategy
 
@@ -303,5 +322,8 @@ cd src-tauri && cargo check
 # Theme debugging
 # Verify CSS custom properties are applied correctly in browser inspector
 ```
+
+Document Read
+when you read document，if the lines < 500 you'd better read the full file
 
 This documentation reflects the current simplified state of the project with recent major cleanups including session pool removal, WSL removal, and project management improvements. The application now focuses on core Claude CLI integration with a streamlined, maintainable architecture.

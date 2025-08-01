@@ -15,6 +15,7 @@ import { getClaudeSyntaxTheme } from "@/lib/claudeSyntaxTheme";
 import { useTheme } from "@/contexts/ThemeContext";
 import { api } from "@/lib/api";
 import type { ClaudeStreamMessage } from "./AgentExecution";
+import { useTranslation } from "@/hooks/useTranslation";
 
 // Utility function to format timestamp to hh:mm:ss format
 const formatTimestamp = (timestamp: string | undefined): string => {
@@ -73,6 +74,7 @@ interface StreamMessageProps {
  */
 const StreamMessageComponent: React.FC<StreamMessageProps> = ({ message, className, streamMessages, onLinkDetected }) => {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   // State to track tool results mapped by tool call ID
   const [toolResults, setToolResults] = useState<Map<string, any>>(new Map());
   // State to track system initialization visibility setting
@@ -331,7 +333,7 @@ const StreamMessageComponent: React.FC<StreamMessageProps> = ({ message, classNa
                         <div className="flex items-center gap-2">
                           <Terminal className="h-4 w-4 text-muted-foreground" />
                           <span className="text-sm font-medium">
-                            Using tool: <code className="font-mono">{content.name}</code>
+                            {t('common.usingTool')} <code className="font-mono">{content.name}</code>
                           </span>
                         </div>
                         {content.input && (
@@ -350,7 +352,7 @@ const StreamMessageComponent: React.FC<StreamMessageProps> = ({ message, classNa
                 
                 {msg.usage && (
                   <div className="text-xs text-muted-foreground mt-2">
-                    Tokens: {msg.usage.input_tokens} in, {msg.usage.output_tokens} out
+                    {t('common.tokensLabel')} {msg.usage.input_tokens} in, {msg.usage.output_tokens} out
                   </div>
                 )}
               </div>
@@ -480,7 +482,7 @@ const StreamMessageComponent: React.FC<StreamMessageProps> = ({ message, classNa
                         <div key={idx} className="space-y-2">
                           <div className="flex items-center gap-2">
                             <CheckCircle2 className="h-4 w-4 text-green-500" />
-                            <span className="text-sm font-medium">Tool Result</span>
+                            <span className="text-sm font-medium">{t('common.toolResult')}</span>
                           </div>
                           
                           {beforeReminder && (
@@ -515,7 +517,7 @@ const StreamMessageComponent: React.FC<StreamMessageProps> = ({ message, classNa
                         <div key={idx} className="space-y-2">
                           <div className="flex items-center gap-2">
                             <CheckCircle2 className="h-4 w-4 text-green-500" />
-                            <span className="text-sm font-medium">Edit Result</span>
+                            <span className="text-sm font-medium">{t('common.editResult')}</span>
                           </div>
                           <EditResultWidget content={contentText} />
                         </div>
@@ -533,7 +535,7 @@ const StreamMessageComponent: React.FC<StreamMessageProps> = ({ message, classNa
                         <div key={idx} className="space-y-2">
                           <div className="flex items-center gap-2">
                             <CheckCircle2 className="h-4 w-4 text-green-500" />
-                            <span className="text-sm font-medium">MultiEdit Result</span>
+                            <span className="text-sm font-medium">{t('common.multiEditResult')}</span>
                           </div>
                           <MultiEditResultWidget content={contentText} />
                         </div>
@@ -583,7 +585,7 @@ const StreamMessageComponent: React.FC<StreamMessageProps> = ({ message, classNa
                         <div key={idx} className="space-y-2">
                           <div className="flex items-center gap-2">
                             <CheckCircle2 className="h-4 w-4 text-green-500" />
-                            <span className="text-sm font-medium">Directory Contents</span>
+                            <span className="text-sm font-medium">{t('common.directoryContents')}</span>
                           </div>
                           <LSResultWidget content={contentText} />
                         </div>
@@ -622,7 +624,7 @@ const StreamMessageComponent: React.FC<StreamMessageProps> = ({ message, classNa
                         <div key={idx} className="space-y-2">
                           <div className="flex items-center gap-2">
                             <CheckCircle2 className="h-4 w-4 text-green-500" />
-                            <span className="text-sm font-medium">Read Result</span>
+                            <span className="text-sm font-medium">{t('common.readResult')}</span>
                           </div>
                           <ReadResultWidget content={contentText} filePath={filePath} />
                         </div>
@@ -636,10 +638,10 @@ const StreamMessageComponent: React.FC<StreamMessageProps> = ({ message, classNa
                         <div key={idx} className="space-y-2">
                           <div className="flex items-center gap-2">
                             <CheckCircle2 className="h-4 w-4 text-green-500" />
-                            <span className="text-sm font-medium">Tool Result</span>
+                            <span className="text-sm font-medium">{t('common.toolResult')}</span>
                           </div>
                           <div className="ml-6 p-3 bg-muted/50 rounded-md border text-sm text-muted-foreground italic">
-                            Tool did not return any output
+                            {t('common.toolDidNotReturnOutput')}
                           </div>
                         </div>
                       );
@@ -709,7 +711,7 @@ const StreamMessageComponent: React.FC<StreamMessageProps> = ({ message, classNa
               <div className="flex-1 space-y-2">
                 <div className="flex items-center justify-between">
                   <h4 className="font-semibold text-sm text-destructive">
-                    Execution Failed
+                    {t('common.executionFailed')}
                   </h4>
                   {formatTimestamp(message.receivedAt) && (
                     <span className="text-xs text-muted-foreground font-mono">
@@ -753,18 +755,21 @@ const StreamMessageComponent: React.FC<StreamMessageProps> = ({ message, classNa
                 
                 <div className="text-xs text-muted-foreground space-y-1 mt-2">
                   {(message.cost_usd !== undefined || message.total_cost_usd !== undefined) && (
-                    <div>Cost: ${((message.cost_usd || message.total_cost_usd)!).toFixed(4)} USD</div>
+                    <div>{t('common.costLabel')} ${((message.cost_usd || message.total_cost_usd)!).toFixed(4)} USD</div>
                   )}
                   {message.duration_ms !== undefined && (
-                    <div>Duration: {(message.duration_ms / 1000).toFixed(2)}s</div>
+                    <div>{t('common.durationLabel')} {(message.duration_ms / 1000).toFixed(2)}s</div>
                   )}
                   {message.num_turns !== undefined && (
-                    <div>Turns: {message.num_turns}</div>
+                    <div>{t('common.turnsLabel')} {message.num_turns}</div>
                   )}
                   {message.usage && (
                     <div>
-                      Total tokens: {message.usage.input_tokens + message.usage.output_tokens} 
-                      ({message.usage.input_tokens} in, {message.usage.output_tokens} out)
+                      {t('common.totalTokensStats', { 
+                        total: message.usage.input_tokens + message.usage.output_tokens,
+                        input: message.usage.input_tokens,
+                        output: message.usage.output_tokens
+                      })}
                     </div>
                   )}
                 </div>
@@ -786,9 +791,9 @@ const StreamMessageComponent: React.FC<StreamMessageProps> = ({ message, classNa
           <div className="flex items-start gap-3">
             <AlertCircle className="h-5 w-5 text-destructive mt-0.5" />
             <div className="flex-1">
-              <p className="text-sm font-medium">Error rendering message</p>
+              <p className="text-sm font-medium">{t('common.errorRenderingMessage')}</p>
               <p className="text-xs text-muted-foreground mt-1">
-                {error instanceof Error ? error.message : 'Unknown error'}
+                {error instanceof Error ? error.message : t('common.unknownError')}
               </p>
             </div>
           </div>
