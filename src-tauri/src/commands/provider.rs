@@ -317,21 +317,27 @@ pub fn detect_current_provider() -> Result<Option<String>, String> {
         // 检查是否有 ANTHROPIC_BASE_URL 和认证信息
         let base_url = env_vars.get("ANTHROPIC_BASE_URL")
             .and_then(|v| v.as_str());
-        let has_auth = env_vars.get("ANTHROPIC_AUTH_TOKEN")
+        let current_auth_token = env_vars.get("ANTHROPIC_AUTH_TOKEN")
             .and_then(|v| v.as_str())
-            .filter(|s| !s.is_empty())
-            .is_some() || 
-            env_vars.get("ANTHROPIC_API_KEY")
+            .filter(|s| !s.is_empty());
+        let current_api_key = env_vars.get("ANTHROPIC_API_KEY")
             .and_then(|v| v.as_str())
-            .filter(|s| !s.is_empty())
-            .is_some();
+            .filter(|s| !s.is_empty());
+        
+        let has_auth = current_auth_token.is_some() || current_api_key.is_some();
         
         if let Some(url) = base_url {
             if has_auth {
                 // 尝试匹配已知的代理商配置
                 if let Ok(providers) = load_providers_from_file() {
                     for provider in providers {
-                        if provider.base_url == url {
+                        // 检查API地址和认证信息是否都匹配
+                        let base_url_matches = provider.base_url == url;
+                        let auth_matches = 
+                            (provider.auth_token.as_deref() == current_auth_token) ||
+                            (provider.api_key.as_deref() == current_api_key);
+                        
+                        if base_url_matches && auth_matches {
                             return Ok(Some(provider.id));
                         }
                     }

@@ -986,7 +986,7 @@ export const Settings: React.FC<SettingsProps> = ({
             
             {/* Provider Tab */}
             <TabsContent value="provider">
-              <ProviderManager onBack={() => {}} />
+              <ProviderManager onBack={() => {}} onProviderChanged={loadSettings} />
             </TabsContent>
             
             {/* Storage Tab */}

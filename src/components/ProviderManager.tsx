@@ -24,9 +24,10 @@ import { useTranslation } from '@/hooks/useTranslation';
 
 interface ProviderManagerProps {
   onBack: () => void;
+  onProviderChanged?: () => void;
 }
 
-export default function ProviderManager({ onBack }: ProviderManagerProps) {
+export default function ProviderManager({ onBack, onProviderChanged }: ProviderManagerProps) {
   const { t } = useTranslation();
   const [presets, setPresets] = useState<ProviderConfig[]>([]);
   const [currentConfig, setCurrentConfig] = useState<CurrentProviderConfig | null>(null);
@@ -67,6 +68,10 @@ export default function ProviderManager({ onBack }: ProviderManagerProps) {
       const message = await api.switchProviderConfig(config);
       setToastMessage({ message, type: 'success' });
       await loadData(); // Refresh current config
+      // 通知父组件代理商已更改
+      if (onProviderChanged) {
+        onProviderChanged();
+      }
     } catch (error) {
       console.error('Failed to switch provider:', error);
       setToastMessage({ message: t('common.switchProviderFailed'), type: 'error' });
@@ -81,6 +86,10 @@ export default function ProviderManager({ onBack }: ProviderManagerProps) {
       const message = await api.clearProviderConfig();
       setToastMessage({ message, type: 'success' });
       await loadData(); // Refresh current config
+      // 通知父组件代理商已更改
+      if (onProviderChanged) {
+        onProviderChanged();
+      }
     } catch (error) {
       console.error('Failed to clear provider:', error);
       setToastMessage({ message: t('common.clearConfigFailed'), type: 'error' });
@@ -155,7 +164,18 @@ export default function ProviderManager({ onBack }: ProviderManagerProps) {
 
   const isCurrentProvider = (config: ProviderConfig): boolean => {
     if (!currentConfig) return false;
-    return currentConfig.anthropic_base_url === config.base_url;
+    
+    // 检查API地址是否匹配
+    const baseUrlMatches = currentConfig.anthropic_base_url === config.base_url;
+    
+    // 检查认证信息是否匹配（auth_token 或 api_key 二选一）
+    const authMatches = 
+      (config.auth_token && currentConfig.anthropic_auth_token === config.auth_token) ||
+      (config.api_key && currentConfig.anthropic_api_key === config.api_key) ||
+      false;
+    
+    // 只有当API地址和认证信息都匹配时才认为是同一个代理商
+    return baseUrlMatches && authMatches;
   };
 
   const maskToken = (token: string): string => {
