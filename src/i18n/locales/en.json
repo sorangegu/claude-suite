@@ -8,7 +8,8 @@
     "ccProjects": "CC Projects",
     "settings": "Settings",
     "usage": "Usage Dashboard",
-    "mcpManager": "MCP Manager"
+    "mcpManager": "MCP Manager",
+    "relayStations": "Relay Station Manager"
   },
   "buttons": {
     "create": "Create",
@@ -950,5 +951,77 @@
     "maximumComputation": "Maximum computation",
     "fasterEfficient": "Faster, efficient for most tasks",
     "moreCapableBetter": "More capable, better for complex tasks"
+  },
+  "relayStations": {
+    "title": "Relay Station Manager",
+    "description": "Manage your Claude API relay stations",
+    "addStation": "Add Station",
+    "stationList": "Station List",
+    "noStations": "No stations available",
+    "noStationsDescription": "Click \"Add Station\" to start configuring",
+    "stationName": "Station Name",
+    "stationDescription": "Description",
+    "apiUrl": "API URL",
+    "adapterType": "Adapter Type",
+    "authMethod": "Authentication Method",
+    "systemToken": "System Token",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "status": "Status",
+    "details": "Details",
+    "tokens": "Tokens",
+    "logs": "Logs",
+    "delete": "Delete",
+    "edit": "Edit",
+    "testConnection": "Test Connection",
+    "connectionSuccess": "Connection successful",
+    "connectionFailed": "Connection failed",
+    "responseTime": "Response time",
+    "stationInfo": "Station Info",
+    "version": "Version",
+    "announcement": "Announcement",
+    "tokenManagement": "Token Management",
+    "tokenList": "Token List",
+    "userInfo": "User Info",
+    "userId": "User ID",
+    "username": "Username",
+    "email": "Email",
+    "balance": "Balance",
+    "used": "Used",
+    "requestCount": "Request Count",
+    "noTokens": "No tokens available",
+    "selectTokenForUserInfo": "Select a token to view user info",
+    "cannotGetUserInfo": "Cannot get user info",
+    "cannotGetStationInfo": "Cannot get station info",
+    "noLogs": "No logs available",
+    "selectStationForLogs": "Select a station to view logs",
+    "confirmDelete": "Are you sure you want to delete station \"{name}\"?",
+    "addStationSuccess": "Station added successfully",
+    "updateStationSuccess": "Station updated successfully",
+    "deleteStationSuccess": "Station deleted successfully",
+    "fetchStationsFailed": "Failed to fetch station list",
+    "deleteStationFailed": "Failed to delete station",
+    "addStationDialog": {
+      "title": "Add Station",
+      "description": "Add a new relay station configuration"
+    },
+    "stationDetailsDialog": {
+      "title": "Station Details",
+      "description": "Station details and status information"
+    },
+    "tokenManagementDialog": {
+      "title": "Token Management",
+      "description": "Manage access tokens and user information for the station"
+    },
+    "adapters": {
+      "newapi": "NewAPI",
+      "oneapi": "OneAPI",
+      "custom": "Custom"
+    },
+    "authMethods": {
+      "bearerToken": "Bearer Token",
+      "apiKey": "API Key",
+      "custom": "Custom"
+    }
   }
 }

@@ -16,6 +16,7 @@ import { CCAgents } from "@/components/CCAgents";
 import { ClaudeCodeSession } from "@/components/ClaudeCodeSession";
 import { UsageDashboard } from "@/components/UsageDashboard";
 import { MCPManager } from "@/components/MCPManager";
+import { RelayStationManager } from "@/components/RelayStationManager";
 import { ClaudeBinaryDialog } from "@/components/ClaudeBinaryDialog";
 import { Toast, ToastContainer } from "@/components/ui/toast";
 import { ProjectSettings } from '@/components/ProjectSettings';
@@ -35,6 +36,7 @@ type View =
   | "agent-run-view"
   | "mcp"
   | "usage-dashboard"
+  | "relay-station-manager"
   | "project-settings";
 
 /**
@@ -445,6 +447,11 @@ function App() {
           <UsageDashboard onBack={() => handleViewChange("welcome")} />
         );
       
+      case "relay-station-manager":
+        return (
+          <RelayStationManager onBack={() => handleViewChange("welcome")} />
+        );
+      
       case "mcp":
         return (
           <MCPManager onBack={() => handleViewChange("welcome")} />
@@ -477,6 +484,7 @@ function App() {
             onClaudeClick={() => handleViewChange("editor")}
             onSettingsClick={() => handleViewChange("settings")}
             onUsageClick={() => handleViewChange("usage-dashboard")}
+            onRelayStationClick={() => handleViewChange("relay-station-manager")}
             onMCPClick={() => handleViewChange("mcp")}
           />
           

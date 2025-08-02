@@ -8,7 +8,8 @@
     "ccProjects": "CC 项目",
     "settings": "设置",
     "usage": "使用统计",
-    "mcpManager": "MCP 管理器"
+    "mcpManager": "MCP 管理器",
+    "relayStations": "中转站管理"
   },
   "buttons": {
     "create": "创建",
@@ -914,5 +915,77 @@
     "maximumComputation": "最大计算",
     "fasterEfficient": "更快，适用于大多数任务",
     "moreCapableBetter": "更强大，更适合复杂任务"
+  },
+  "relayStations": {
+    "title": "中转站管理",
+    "description": "管理你的 Claude API 中转站",
+    "addStation": "添加中转站",
+    "stationList": "中转站列表",
+    "noStations": "暂无中转站",
+    "noStationsDescription": "点击'添加中转站'开始配置",
+    "stationName": "站点名称",
+    "stationDescription": "描述",
+    "apiUrl": "API地址",
+    "adapterType": "适配器类型",
+    "authMethod": "认证方式",
+    "systemToken": "系统令牌",
+    "enabled": "启用",
+    "disabled": "禁用",
+    "status": "状态",
+    "details": "详情",
+    "tokens": "Token",
+    "logs": "日志",
+    "delete": "删除",
+    "edit": "编辑",
+    "testConnection": "测试连接",
+    "connectionSuccess": "连接成功",
+    "connectionFailed": "连接失败",
+    "responseTime": "响应时间",
+    "stationInfo": "站点信息",
+    "version": "版本",
+    "announcement": "公告",
+    "tokenManagement": "Token 管理",
+    "tokenList": "Token 列表",
+    "userInfo": "用户信息",
+    "userId": "用户ID",
+    "username": "用户名",
+    "email": "邮箱",
+    "balance": "余额",
+    "used": "已用",
+    "requestCount": "请求量",
+    "noTokens": "暂无 Token",
+    "selectTokenForUserInfo": "选择一个 Token 查看用户信息",
+    "cannotGetUserInfo": "无法获取用户信息",
+    "cannotGetStationInfo": "无法获取站点信息",
+    "noLogs": "暂无日志",
+    "selectStationForLogs": "选择一个中转站查看日志",
+    "confirmDelete": "确定要删除中转站 \"{name}\" 吗？",
+    "addStationSuccess": "中转站添加成功",
+    "updateStationSuccess": "中转站更新成功",
+    "deleteStationSuccess": "中转站删除成功",
+    "fetchStationsFailed": "获取中转站列表失败",
+    "deleteStationFailed": "删除中转站失败",
+    "addStationDialog": {
+      "title": "添加中转站",
+      "description": "添加一个新的中转站配置"
+    },
+    "stationDetailsDialog": {
+      "title": "中转站详情",
+      "description": "中转站详细信息和状态"
+    },
+    "tokenManagementDialog": {
+      "title": "Token 管理",
+      "description": "管理中转站的访问令牌和用户信息"
+    },
+    "adapters": {
+      "newapi": "NewAPI",
+      "oneapi": "OneAPI", 
+      "custom": "自定义"
+    },
+    "authMethods": {
+      "bearerToken": "Bearer Token",
+      "apiKey": "API Key",
+      "custom": "自定义"
+    }
   }
 }

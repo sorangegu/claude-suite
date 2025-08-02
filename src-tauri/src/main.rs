@@ -55,6 +55,12 @@ use commands::provider::{
     update_provider_config, delete_provider_config, get_provider_config,
     detect_current_provider, is_provider_applied, set_backend_language, get_backend_language,
 };
+use commands::relay_stations::{
+    list_relay_stations, get_relay_station, add_relay_station, update_relay_station,
+    delete_relay_station, get_station_info, list_station_tokens, add_station_token,
+    update_station_token, delete_station_token, get_token_user_info, get_station_logs,
+    test_station_connection, RelayStationManager,
+};
 use process::ProcessRegistryState;
 use std::sync::Mutex;
 use tauri::Manager;
@@ -72,6 +78,17 @@ fn main() {
             // Initialize agents database
             let conn = init_database(&app.handle()).expect("Failed to initialize agents database");
             app.manage(AgentDb(Mutex::new(conn)));
+
+            // Initialize relay station manager using the same database connection
+            let db_path = app
+                .path()
+                .app_data_dir()
+                .expect("Failed to get app data dir")
+                .join("agents.db");
+            let relay_conn = rusqlite::Connection::open(&db_path).expect("Failed to open database for relay stations");
+            let relay_manager = RelayStationManager::new(std::sync::Arc::new(Mutex::new(relay_conn)))
+                .expect("Failed to initialize relay station manager");
+            app.manage(Mutex::new(Some(relay_manager)) as Mutex<Option<RelayStationManager>>);
 
             // Initialize checkpoint state
             let checkpoint_state = CheckpointState::new();
@@ -236,6 +253,21 @@ fn main() {
             is_provider_applied,
             set_backend_language,
             get_backend_language,
+            
+            // Relay Station Management
+            list_relay_stations,
+            get_relay_station,
+            add_relay_station,
+            update_relay_station,
+            delete_relay_station,
+            get_station_info,
+            list_station_tokens,
+            add_station_token,
+            update_station_token,
+            delete_station_token,
+            get_token_user_info,
+            get_station_logs,
+            test_station_connection,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

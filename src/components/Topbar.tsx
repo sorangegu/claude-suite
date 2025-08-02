@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { motion } from "framer-motion";
-import { FileText, Settings, BarChart3, Network } from "lucide-react";
+import { FileText, Settings, BarChart3, Network, Server } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ClaudeStatusIndicator } from "@/components/ClaudeStatusIndicator";
 import { cn } from "@/lib/utils";
@@ -24,6 +24,10 @@ interface TopbarProps {
    */
   onMCPClick: () => void;
   /**
+   * Callback when Relay Station Manager is clicked
+   */
+  onRelayStationClick: () => void;
+  /**
    * Optional className for styling
    */
   className?: string;
@@ -45,6 +49,7 @@ export const Topbar: React.FC<TopbarProps> = ({
   onSettingsClick,
   onUsageClick,
   onMCPClick,
+  onRelayStationClick,
   className,
 }) => {
   const { t } = useTranslation();
@@ -78,6 +83,16 @@ export const Topbar: React.FC<TopbarProps> = ({
         >
           <BarChart3 className="mr-2 h-3 w-3" />
           {t('navigation.usage')}
+        </Button>
+        
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onRelayStationClick}
+          className="text-xs"
+        >
+          <Server className="mr-2 h-3 w-3" />
+          {t('navigation.relayStations')}
         </Button>
         
         <Button

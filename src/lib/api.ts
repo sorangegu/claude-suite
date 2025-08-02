@@ -486,6 +486,249 @@ export interface ImportServerResult {
 }
 
 /**
+ * Relay station adapter type for different station implementations
+ */
+export type RelayStationAdapter = 'newapi' | 'oneapi' | 'custom';
+
+/**
+ * Authentication method for relay stations
+ */
+export type AuthMethod = 'bearer_token' | 'api_key' | 'custom';
+
+/**
+ * Request type for creating a new relay station (without generated fields)
+ */
+export interface CreateRelayStationRequest {
+  /** Display name of the station */
+  name: string;
+  /** Description of the station */
+  description?: string;
+  /** Base API URL of the station */
+  api_url: string;
+  /** Adapter type for this station */
+  adapter: RelayStationAdapter;
+  /** Authentication method */
+  auth_method: AuthMethod;
+  /** System access token for management operations */
+  system_token: string;
+  /** User ID for NewAPI stations (required for NewAPI) */
+  user_id?: string;
+  /** Additional configuration for the adapter */
+  adapter_config?: Record<string, any>;
+  /** Whether the station is enabled */
+  enabled: boolean;
+}
+
+/**
+ * Represents a relay station configuration
+ */
+export interface RelayStation {
+  /** Unique identifier for the station */
+  id: string;
+  /** Display name of the station */
+  name: string;
+  /** Description of the station */
+  description?: string;
+  /** Base API URL of the station */
+  api_url: string;
+  /** Adapter type for this station */
+  adapter: RelayStationAdapter;
+  /** Authentication method */
+  auth_method: AuthMethod;
+  /** System access token for management operations */
+  system_token: string;
+  /** User ID for NewAPI stations (required for NewAPI) */
+  user_id?: string;
+  /** Additional configuration for the adapter */
+  adapter_config?: Record<string, any>;
+  /** Whether the station is enabled */
+  enabled: boolean;
+  /** Creation timestamp */
+  created_at: number;
+  /** Last update timestamp */
+  updated_at: number;
+}
+
+/**
+ * Station information retrieved from the relay station
+ */
+export interface StationInfo {
+  /** Station name from the API */
+  name: string;
+  /** Station announcement/notice */
+  announcement?: string;
+  /** API base URL */
+  api_url: string;
+  /** Station version if available */
+  version?: string;
+  /** Additional metadata */
+  metadata?: Record<string, any>;
+  /** Quota per unit for price conversion */
+  quota_per_unit?: number;
+}
+
+/**
+ * Token configuration for a relay station
+ */
+export interface RelayStationToken {
+  /** Unique identifier for the token */
+  id: string;
+  /** Station ID this token belongs to */
+  station_id: string;
+  /** Token name/label */
+  name: string;
+  /** The actual token value */
+  token: string;
+  /** User ID associated with this token */
+  user_id?: string;
+  /** Whether the token is enabled */
+  enabled: boolean;
+  /** Token expiration timestamp if applicable */
+  expires_at?: number;
+  /** Additional token metadata */
+  metadata?: Record<string, any>;
+  /** Creation timestamp */
+  created_at: number;
+}
+
+/**
+ * Request structure for creating a new token
+ */
+export interface CreateTokenRequest {
+  /** Token name/label */
+  name: string;
+  /** Remaining quota for the token */
+  remain_quota?: number;
+  /** Token expiration timestamp (-1 for no expiration) */
+  expired_time?: number;
+  /** Whether the token has unlimited quota */
+  unlimited_quota?: boolean;
+  /** Whether model limits are enabled */
+  model_limits_enabled?: boolean;
+  /** Model limits configuration */
+  model_limits?: string;
+  /** Token group */
+  group?: string;
+  /** Allowed IP addresses */
+  allow_ips?: string;
+}
+
+/**
+ * Request structure for updating an existing token
+ */
+export interface UpdateTokenRequest {
+  /** Token ID (required for update) */
+  id: number;
+  /** Token name/label */
+  name?: string;
+  /** Remaining quota for the token */
+  remain_quota?: number;
+  /** Token expiration timestamp (-1 for no expiration) */
+  expired_time?: number;
+  /** Whether the token has unlimited quota */
+  unlimited_quota?: boolean;
+  /** Whether model limits are enabled */
+  model_limits_enabled?: boolean;
+  /** Model limits configuration */
+  model_limits?: string;
+  /** Token group */
+  group?: string;
+  /** Allowed IP addresses */
+  allow_ips?: string;
+}
+
+/**
+ * User information retrieved from a relay station
+ */
+export interface UserInfo {
+  /** User ID */
+  user_id: string;
+  /** Username or display name */
+  username?: string;
+  /** User email if available */
+  email?: string;
+  /** Account balance remaining */
+  balance_remaining?: number;
+  /** Amount already used */
+  amount_used?: number;
+  /** Request count */
+  request_count?: number;
+  /** Account status */
+  status?: string;
+  /** Additional user metadata */
+  metadata?: Record<string, any>;
+}
+
+/**
+ * Log entry from a relay station
+ */
+export interface StationLogEntry {
+  /** Log entry ID */
+  id: string;
+  /** Timestamp of the log entry */
+  timestamp: number;
+  /** Log level (info, warn, error, api) */
+  level: string;
+  /** Log message */
+  message: string;
+  /** User ID associated with this log entry */
+  user_id?: string;
+  /** Request ID if applicable */
+  request_id?: string;
+  /** Additional metadata */
+  metadata?: Record<string, any>;
+  // Additional fields from NewAPI logs
+  /** Model name used in the API call */
+  model_name?: string;
+  /** Number of prompt tokens */
+  prompt_tokens?: number;
+  /** Number of completion tokens */
+  completion_tokens?: number;
+  /** Cost/quota used */
+  quota?: number;
+  /** Token name used */
+  token_name?: string;
+  /** Response time in seconds */
+  use_time?: number;
+  /** Whether the request was streamed */
+  is_stream?: boolean;
+  /** Channel ID */
+  channel?: number;
+  /** Group name */
+  group?: string;
+}
+
+/**
+ * Paginated log response
+ */
+export interface LogPaginationResponse {
+  /** Log entries for the current page */
+  items: StationLogEntry[];
+  /** Current page number */
+  page: number;
+  /** Number of items per page */
+  page_size: number;
+  /** Total number of log entries */
+  total: number;
+}
+
+/**
+ * Connection test result for a relay station
+ */
+export interface ConnectionTestResult {
+  /** Whether the connection was successful */
+  success: boolean;
+  /** Response time in milliseconds */
+  response_time?: number;
+  /** Status message */
+  message: string;
+  /** HTTP status code if applicable */
+  status_code?: number;
+  /** Additional test details */
+  details?: Record<string, any>;
+}
+
+/**
  * API client for interacting with the Rust backend
  */
 export const api = {
@@ -2191,6 +2434,199 @@ export const api = {
       return await invoke<string>("get_backend_language");
     } catch (error) {
       console.error("Failed to get backend language:", error);
+      throw error;
+    }
+  },
+
+  // Relay Station Management API methods
+
+  /**
+   * Lists all configured relay stations
+   * @returns Promise resolving to array of relay stations
+   */
+  async listRelayStations(): Promise<RelayStation[]> {
+    try {
+      return await invoke<RelayStation[]>("list_relay_stations");
+    } catch (error) {
+      console.error("Failed to list relay stations:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Gets a specific relay station by ID
+   * @param stationId - The ID of the relay station
+   * @returns Promise resolving to relay station details
+   */
+  async getRelayStation(stationId: string): Promise<RelayStation> {
+    try {
+      return await invoke<RelayStation>("get_relay_station", { stationId });
+    } catch (error) {
+      console.error("Failed to get relay station:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Adds a new relay station
+   * @param stationRequest - The relay station configuration
+   * @returns Promise resolving to success message
+   */
+  async addRelayStation(stationRequest: CreateRelayStationRequest): Promise<string> {
+    try {
+      return await invoke<string>("add_relay_station", { stationRequest });
+    } catch (error) {
+      console.error("Failed to add relay station:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Updates an existing relay station
+   * @param stationId - The ID of the relay station to update
+   * @param updates - The fields to update
+   * @returns Promise resolving to success message
+   */
+  async updateRelayStation(stationId: string, updates: Partial<RelayStation>): Promise<string> {
+    try {
+      return await invoke<string>("update_relay_station", { stationId, updates });
+    } catch (error) {
+      console.error("Failed to update relay station:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Deletes a relay station
+   * @param stationId - The ID of the relay station to delete
+   * @returns Promise resolving to success message
+   */
+  async deleteRelayStation(stationId: string): Promise<string> {
+    try {
+      return await invoke<string>("delete_relay_station", { stationId });
+    } catch (error) {
+      console.error("Failed to delete relay station:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Gets station info (name, announcement, API address)
+   * @param stationId - The ID of the relay station
+   * @returns Promise resolving to station info
+   */
+  async getStationInfo(stationId: string): Promise<StationInfo> {
+    try {
+      return await invoke<StationInfo>("get_station_info", { stationId });
+    } catch (error) {
+      console.error("Failed to get station info:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Lists all tokens for a relay station
+   * @param stationId - The ID of the relay station
+   * @param page - Optional page number for pagination
+   * @param size - Optional page size for pagination
+   * @returns Promise resolving to array of tokens
+   */
+  async listStationTokens(stationId: string, page?: number, size?: number): Promise<RelayStationToken[]> {
+    try {
+      return await invoke<RelayStationToken[]>("list_station_tokens", { stationId, page, size });
+    } catch (error) {
+      console.error("Failed to list station tokens:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Adds a new token to a relay station
+   * @param stationId - The ID of the relay station
+   * @param tokenData - The token creation request data
+   * @returns Promise resolving to the created token
+   */
+  async addStationToken(stationId: string, tokenData: CreateTokenRequest): Promise<RelayStationToken> {
+    try {
+      return await invoke<RelayStationToken>("add_station_token", { stationId, tokenData });
+    } catch (error) {
+      console.error("Failed to add station token:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Updates an existing token
+   * @param stationId - The ID of the relay station
+   * @param tokenId - The ID of the token to update
+   * @param tokenData - The token update request data
+   * @returns Promise resolving to the updated token
+   */
+  async updateStationToken(stationId: string, tokenId: string, tokenData: UpdateTokenRequest): Promise<RelayStationToken> {
+    try {
+      return await invoke<RelayStationToken>("update_station_token", { stationId, tokenId, tokenData });
+    } catch (error) {
+      console.error("Failed to update station token:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Deletes a token
+   * @param stationId - The ID of the relay station
+   * @param tokenId - The ID of the token to delete
+   * @returns Promise resolving to success message
+   */
+  async deleteStationToken(stationId: string, tokenId: string): Promise<string> {
+    try {
+      return await invoke<string>("delete_station_token", { stationId, tokenId });
+    } catch (error) {
+      console.error("Failed to delete station token:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Gets user information for a relay station
+   * @param stationId - The ID of the relay station
+   * @param userId - The user ID to get information for
+   * @returns Promise resolving to user information
+   */
+  async getTokenUserInfo(stationId: string, userId: string): Promise<UserInfo> {
+    try {
+      return await invoke<UserInfo>("get_token_user_info", { stationId, userId });
+    } catch (error) {
+      console.error("Failed to get token user info:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Gets logs for a relay station with pagination
+   * @param stationId - The ID of the relay station
+   * @param page - Page number for pagination (1-based)
+   * @param pageSize - Number of log entries per page
+   * @returns Promise resolving to paginated log response
+   */
+  async getStationLogs(stationId: string, page?: number, pageSize?: number): Promise<LogPaginationResponse> {
+    try {
+      return await invoke<LogPaginationResponse>("get_station_logs", { stationId, page, pageSize });
+    } catch (error) {
+      console.error("Failed to get station logs:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Tests connection to a relay station
+   * @param stationId - The ID of the relay station
+   * @returns Promise resolving to test result
+   */
+  async testStationConnection(stationId: string): Promise<ConnectionTestResult> {
+    try {
+      return await invoke<ConnectionTestResult>("test_station_connection", { stationId });
+    } catch (error) {
+      console.error("Failed to test station connection:", error);
       throw error;
     }
   }

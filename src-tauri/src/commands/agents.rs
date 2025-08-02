@@ -226,6 +226,15 @@ pub fn init_database(app: &AppHandle) -> SqliteResult<Connection> {
     let conn = Connection::open(db_path)?;
 
     // Create agents table
+
+/// Get the database path for shared use across modules
+pub fn get_database_path() -> std::path::PathBuf {
+    let app_data_dir = dirs::data_dir()
+        .expect("Failed to get data dir")
+        .join("com.claude.workbench");
+    std::fs::create_dir_all(&app_data_dir).expect("Failed to create app data dir");
+    app_data_dir.join("agents.db")
+}
     conn.execute(
         "CREATE TABLE IF NOT EXISTS agents (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
