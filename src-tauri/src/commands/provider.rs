@@ -3,9 +3,25 @@ use std::collections::HashMap;
 use std::env;
 use std::fs;
 use std::path::PathBuf;
-use std::process::Command;
 use tauri::{command, AppHandle, Manager};
 use crate::process::ProcessRegistryState;
+use crate::i18n;
+
+#[command]
+pub fn set_backend_language(language: String) -> Result<String, String> {
+    let lang = i18n::Language::from_str(&language);
+    i18n::set_language(lang);
+    Ok(format!("Backend language set to: {}", language))
+}
+
+#[command]
+pub fn get_backend_language() -> Result<String, String> {
+    let lang = i18n::get_language();
+    match lang {
+        i18n::Language::Zh => Ok("zh".to_string()),
+        i18n::Language::En => Ok("en".to_string()),
+    }
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ProviderConfig {
@@ -36,14 +52,14 @@ struct ClaudeSettings {
 // 获取 Claude 配置目录路径
 fn get_claude_dir() -> Result<PathBuf, String> {
     let home_dir = dirs::home_dir()
-        .ok_or_else(|| "无法获取用户主目录".to_string())?;
+        .ok_or_else(|| i18n::t("provider.home_dir_not_found"))?;
     
     let config_dir = home_dir.join(".claude");
     
     // 确保配置目录存在
     if !config_dir.exists() {
         fs::create_dir_all(&config_dir)
-            .map_err(|e| format!("无法创建配置目录: {}", e))?;
+            .map_err(|e| i18n::t_with_args("provider.create_config_dir_failed", &[("error", &e.to_string())]))?;
     }
     
     Ok(config_dir)
@@ -67,10 +83,10 @@ fn read_claude_settings() -> Result<ClaudeSettings, String> {
     }
     
     let content = fs::read_to_string(&settings_path)
-        .map_err(|e| format!("读取 Claude settings 文件失败: {}", e))?;
+        .map_err(|e| i18n::t_with_args("provider.read_claude_settings_failed", &[("error", &e.to_string())]))?;
     
     let settings: ClaudeSettings = serde_json::from_str(&content)
-        .map_err(|e| format!("解析 Claude settings 文件失败: {}", e))?;
+        .map_err(|e| i18n::t_with_args("provider.parse_claude_settings_failed", &[("error", &e.to_string())]))?;
     
     Ok(settings)
 }
@@ -80,10 +96,10 @@ fn write_claude_settings(settings: &ClaudeSettings) -> Result<(), String> {
     let settings_path = get_claude_settings_path()?;
     
     let content = serde_json::to_string_pretty(settings)
-        .map_err(|e| format!("序列化 Claude settings 失败: {}", e))?;
+        .map_err(|e| i18n::t_with_args("provider.serialize_claude_settings_failed", &[("error", &e.to_string())]))?;
     
     fs::write(&settings_path, content)
-        .map_err(|e| format!("写入 Claude settings 文件失败: {}", e))?;
+        .map_err(|e| i18n::t_with_args("provider.write_claude_settings_failed", &[("error", &e.to_string())]))?;
     
     Ok(())
 }
@@ -139,14 +155,14 @@ fn load_providers_from_file() -> Result<Vec<ProviderConfig>, String> {
     }
     
     let content = fs::read_to_string(&config_path)
-        .map_err(|e| format!("读取配置文件失败: {}", e))?;
+        .map_err(|e| i18n::t_with_args("provider.read_config_failed", &[("error", &e.to_string())]))?;
     
     if content.trim().is_empty() {
         return Ok(vec![]);
     }
     
     let providers: Vec<ProviderConfig> = serde_json::from_str(&content)
-        .map_err(|e| format!("解析配置文件失败: {}", e))?;
+        .map_err(|e| i18n::t_with_args("provider.parse_config_failed", &[("error", &e.to_string())]))?;
     
     Ok(providers)
 }
@@ -156,10 +172,10 @@ fn save_providers_to_file(providers: &Vec<ProviderConfig>) -> Result<(), String>
     let config_path = get_providers_config_path()?;
     
     let content = serde_json::to_string_pretty(providers)
-        .map_err(|e| format!("序列化配置失败: {}", e))?;
+        .map_err(|e| i18n::t_with_args("provider.serialize_config_failed", &[("error", &e.to_string())]))?;
     
     fs::write(&config_path, content)
-        .map_err(|e| format!("写入配置文件失败: {}", e))?;
+        .map_err(|e| i18n::t_with_args("provider.write_config_failed", &[("error", &e.to_string())]))?;
     
     Ok(())
 }
@@ -174,10 +190,10 @@ pub fn get_provider_presets() -> Result<Vec<ProviderConfig>, String> {
     }
     
     let content = fs::read_to_string(&config_path)
-        .map_err(|e| format!("无法读取配置文件: {}", e))?;
+        .map_err(|e| i18n::t_with_args("provider.read_config_failed", &[("error", &e.to_string())]))?;
     
     let configs: Vec<ProviderConfig> = serde_json::from_str(&content)
-        .map_err(|e| format!("配置文件格式错误: {}", e))?;
+        .map_err(|e| i18n::t_with_args("provider.invalid_config_format", &[("error", &e.to_string())]))?;
     
     Ok(configs)
 }
@@ -188,13 +204,13 @@ pub fn add_provider_config(config: ProviderConfig) -> Result<String, String> {
     
     // 检查ID是否已存在
     if providers.iter().any(|p| p.id == config.id) {
-        return Err(format!("ID '{}' 已存在，请使用不同的ID", config.id));
+        return Err(i18n::t_with_args("provider.id_already_exists", &[("id", &config.id)]));
     }
     
     providers.push(config.clone());
     save_providers_to_file(&providers)?;
     
-    Ok(format!("成功添加代理商配置: {}", config.name))
+    Ok(i18n::t_with_args("provider.add_success", &[("name", &config.name)]))
 }
 
 // CRUD 操作 - 更新代理商配置
@@ -203,12 +219,12 @@ pub fn update_provider_config(config: ProviderConfig) -> Result<String, String> 
     let mut providers = load_providers_from_file()?;
     
     let index = providers.iter().position(|p| p.id == config.id)
-        .ok_or_else(|| format!("未找到ID为 '{}' 的配置", config.id))?;
+        .ok_or_else(|| i18n::t_with_args("provider.config_not_found", &[("id", &config.id)]))?;
     
     providers[index] = config.clone();
     save_providers_to_file(&providers)?;
     
-    Ok(format!("成功更新代理商配置: {}", config.name))
+    Ok(i18n::t_with_args("provider.update_success", &[("name", &config.name)]))
 }
 
 // CRUD 操作 - 删除代理商配置
@@ -217,12 +233,12 @@ pub fn delete_provider_config(id: String) -> Result<String, String> {
     let mut providers = load_providers_from_file()?;
     
     let index = providers.iter().position(|p| p.id == id)
-        .ok_or_else(|| format!("未找到ID为 '{}' 的配置", id))?;
+        .ok_or_else(|| i18n::t_with_args("provider.config_not_found", &[("id", &id)]))?;
     
     let deleted_config = providers.remove(index);
     save_providers_to_file(&providers)?;
     
-    Ok(format!("成功删除代理商配置: {}", deleted_config.name))
+    Ok(i18n::t_with_args("provider.delete_success", &[("name", &deleted_config.name)]))
 }
 
 // CRUD 操作 - 获取单个代理商配置
@@ -232,7 +248,7 @@ pub fn get_provider_config(id: String) -> Result<ProviderConfig, String> {
     
     providers.into_iter()
         .find(|p| p.id == id)
-        .ok_or_else(|| format!("未找到ID为 '{}' 的配置", id))
+        .ok_or_else(|| i18n::t_with_args("provider.config_not_found", &[("id", &id)]))
 }
 
 #[command]
@@ -272,7 +288,7 @@ pub async fn switch_provider_config(config: ProviderConfig) -> Result<String, St
         update_settings_env("ANTHROPIC_MODEL", None)?;
     }
     
-    Ok(format!("已成功切换到 {} ({})，配置已保存到 Raw Settings", config.name, config.description))
+    Ok(i18n::t_with_args("provider.switch_success", &[("name", &config.name), ("description", &config.description)]))
 }
 
 #[command]
@@ -289,7 +305,7 @@ pub async fn clear_provider_config() -> Result<String, String> {
         update_settings_env(var_name, None)?;
     }
     
-    Ok("已清理所有 ANTHROPIC 环境变量在 Raw Settings 中".to_string())
+    Ok(i18n::t("provider.clear_success"))
 }
 
 // 检测当前应用的代理商（基于 Raw Settings 中的 API 地址和 Token）
@@ -372,10 +388,10 @@ pub fn test_provider_connection(base_url: String) -> Result<String, String> {
     
     // 这里可以实现实际的 HTTP 请求测试
     // 目前返回一个简单的成功消息
-    Ok(format!("连接测试完成：{}", test_url))
+    Ok(i18n::t_with_args("provider.connection_test_complete", &[("url", &test_url)]))
 }
 async fn terminate_claude_processes(app: &AppHandle) {
-    log::info!("正在终止所有Claude进程以应用新的代理商配置...");
+    log::info!("{}", i18n::t("process.terminating_claude_processes"));
     
     // 获取进程注册表
     let registry = app.state::<ProcessRegistryState>();
@@ -383,7 +399,7 @@ async fn terminate_claude_processes(app: &AppHandle) {
     // 获取所有活动的Claude会话
     match registry.0.get_running_claude_sessions() {
         Ok(sessions) => {
-            log::info!("找到 {} 个活动的Claude会话", sessions.len());
+            log::info!("{}", i18n::t_with_args("process.found_active_sessions", &[("count", &sessions.len().to_string())]));
             
             for session in sessions {
                 let session_id_str = match &session.process_type {
@@ -391,41 +407,37 @@ async fn terminate_claude_processes(app: &AppHandle) {
                     _ => "unknown",
                 };
                 
-                log::info!("正在终止Claude会话: session_id={}, run_id={}, PID={}", 
-                    session_id_str,
-                    session.run_id, 
-                    session.pid
-                );
+                log::info!("{}", i18n::t_with_args("process.terminating_session", &[("session_id", session_id_str), ("run_id", &session.run_id.to_string()), ("pid", &session.pid.to_string())]));
                 
                 // 尝试优雅地终止进程
                 match registry.0.kill_process(session.run_id).await {
                     Ok(success) => {
                         if success {
-                            log::info!("成功终止Claude会话 {}", session.run_id);
+                            log::info!("{}", i18n::t_with_args("process.session_terminated", &[("run_id", &session.run_id.to_string())]));
                         } else {
-                            log::warn!("终止Claude会话 {} 返回false", session.run_id);
+                            log::warn!("{}", i18n::t_with_args("process.session_terminate_false", &[("run_id", &session.run_id.to_string())]));
                             
                             // 尝试强制终止
                             if let Err(e) = registry.0.kill_process_by_pid(session.run_id, session.pid as u32) {
-                                log::error!("强制终止进程失败: {}", e);
+                                log::error!("{}", i18n::t_with_args("process.force_terminate_failed", &[("error", &e.to_string())]));
                             }
                         }
                     }
                     Err(e) => {
-                        log::error!("终止Claude会话 {} 失败: {}", session.run_id, e);
+                        log::error!("{}", i18n::t_with_args("process.session_terminate_failed", &[("run_id", &session.run_id.to_string()), ("error", &e.to_string())]));
                         
                         // 尝试强制终止
                         if let Err(e2) = registry.0.kill_process_by_pid(session.run_id, session.pid as u32) {
-                            log::error!("强制终止进程也失败: {}", e2);
+                            log::error!("{}", i18n::t_with_args("process.force_terminate_also_failed", &[("error", &e2.to_string())]));
                         }
                     }
                 }
             }
         }
         Err(e) => {
-            log::error!("获取Claude会话列表失败: {}", e);
+            log::error!("{}", i18n::t_with_args("process.get_sessions_failed", &[("error", &e.to_string())]));
         }
     }
     
-    log::info!("Claude进程终止操作完成");
+    log::info!("{}", i18n::t("process.termination_complete"));
 }

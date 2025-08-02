@@ -5,6 +5,7 @@ mod checkpoint;
 mod claude_binary;
 mod commands;
 mod process;
+mod i18n;
 
 use checkpoint::state::CheckpointState;
 use commands::agents::{
@@ -52,7 +53,7 @@ use commands::provider::{
     get_provider_presets, get_current_provider_config, switch_provider_config,
     clear_provider_config, test_provider_connection, add_provider_config,
     update_provider_config, delete_provider_config, get_provider_config,
-    detect_current_provider, is_provider_applied,
+    detect_current_provider, is_provider_applied, set_backend_language, get_backend_language,
 };
 use process::ProcessRegistryState;
 use std::sync::Mutex;
@@ -233,6 +234,8 @@ fn main() {
             get_provider_config,
             detect_current_provider,
             is_provider_applied,
+            set_backend_language,
+            get_backend_language,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

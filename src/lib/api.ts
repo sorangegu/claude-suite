@@ -2164,5 +2164,34 @@ export const api = {
       console.error("Failed to check if provider is applied:", error);
       throw error;
     }
+  },
+
+  // Backend i18n API methods
+
+  /**
+   * Sets the backend language for error messages and logs
+   * @param language - Language code ('zh', 'en')
+   * @returns Promise resolving to success message
+   */
+  async setBackendLanguage(language: string): Promise<string> {
+    try {
+      return await invoke<string>("set_backend_language", { language });
+    } catch (error) {
+      console.error("Failed to set backend language:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Gets the current backend language
+   * @returns Promise resolving to current language code
+   */
+  async getBackendLanguage(): Promise<string> {
+    try {
+      return await invoke<string>("get_backend_language");
+    } catch (error) {
+      console.error("Failed to get backend language:", error);
+      throw error;
+    }
   }
 };
