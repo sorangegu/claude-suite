@@ -3,12 +3,12 @@
 > 专为 Windows 用户设计的 Claude CLI 桌面管理工具
 >
 > 修改内容：
-> 1. 更换代理商切换方式为直接修改json文件
+> 1. 完整支持中转站管理
 > 2. 全面完善i18n
 
-[![Release](https://img.shields.io/github/v/release/anyme123/claude-suite?color=brightgreen)](https://github.com/anyme123/claude-suite/releases)
+[![Release](https://img.shields.io/github/v/release/xinhai-ai/claude-suite?color=brightgreen)](https://github.com/xinhai-ai/claude-suite/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Windows-blue)](https://github.com/anyme123/claude-suite)
+[![Platform](https://img.shields.io/badge/platform-Windows-blue)](https://github.com/xinhai-ai/claude-suite)
 
 ## ✨ 特性
 
@@ -42,7 +42,7 @@
 ### 安装方式
 
 #### 方式一：下载预构建版本 (推荐)
-1. 前往 [Releases 页面](https://github.com/anyme123/claude-workbench/releases)
+1. 前往 [Releases 页面](https://github.com/xinhai-ai/claude-suite/releases)
 2. 下载 Windows 安装包：
    - `Claude Workbench_x.x.x_x64-setup.exe` (NSIS 安装包)
    - `Claude Workbench_x.x.x_x64_en-US.msi` (MSI 安装包)
@@ -51,7 +51,7 @@
 #### 方式二：从源代码构建
 ```bash
 # 克隆仓库
-git clone https://github.com/anyme123/claude-workbench.git
+git clone https://github.com/xinhai-ai/claude-suite.git
 cd claude-workbench
 
 # 安装依赖 (推荐使用 Bun)
@@ -129,7 +129,7 @@ bun run tauri build
 - 更新相关文档
 
 ### 报告问题
-- 使用 [Issue 模板](https://github.com/anyme123/claude-workbench/issues/new) 报告 Bug
+- 使用 [Issue 模板](https://github.com/xinhai-ai/claude-suite/issues/new) 报告 Bug
 - 提供详细的复现步骤和环境信息
 - 附加相关的日志文件和截图
 
@@ -158,8 +158,8 @@ bun run tauri build
 
 ## 📞 联系方式
 
-- **Issues**: [GitHub Issues](https://github.com/anyme123/claude-workbench/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/anyme123/claude-workbench/discussions)
+- **Issues**: [GitHub Issues](https://github.com/xinhai-ai/claude-suite/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/xinhai-ai/claude-suite/discussions)
 
 ---
 
