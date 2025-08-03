@@ -28,7 +28,7 @@ import {
   Shield
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
@@ -44,7 +44,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { api, type RelayStation, type RelayStationAdapter, type CreateRelayStationRequest, type RelayStationToken, type StationInfo, type UserInfo, type StationLogEntry, type LogPaginationResponse, type ConnectionTestResult, type CreateTokenRequest, type UpdateTokenRequest, type TokenGroup, type UserGroupsResponse } from '@/lib/api';
+import { api, type RelayStation, type RelayStationAdapter, type CreateRelayStationRequest, type RelayStationToken, type StationInfo, type UserInfo, type StationLogEntry, type LogPaginationResponse, type ConnectionTestResult, type CreateTokenRequest, type UpdateTokenRequest, type TokenGroup } from '@/lib/api';
 import { Toast } from '@/components/ui/toast';
 
 interface RelayStationManagerProps {
