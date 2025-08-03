@@ -8,12 +8,15 @@ use reqwest;
 use rusqlite::{params, Connection};
 use std::sync::Mutex;
 
+use super::relay_adapters::{NewApiAdapter, YourApiAdapter, CustomAdapter};
+
 /// Relay station adapter type for different station implementations
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum RelayStationAdapter {
     Newapi,
     Oneapi,
+    Yourapi,
     Custom,
 }
 
@@ -78,6 +81,9 @@ pub struct RelayStationToken {
     pub user_id: Option<String>,
     pub enabled: bool,
     pub expires_at: Option<i64>,
+    pub group: Option<String>,
+    pub remain_quota: Option<i64>,
+    pub unlimited_quota: Option<bool>,
     pub metadata: Option<HashMap<String, serde_json::Value>>,
     pub created_at: i64,
 }
@@ -126,6 +132,15 @@ pub struct LogPaginationResponse {
     pub total: i64,
 }
 
+/// Token pagination response
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TokenPaginationResponse {
+    pub items: Vec<RelayStationToken>,
+    pub page: usize,
+    pub page_size: usize,
+    pub total: i64,
+}
+
 /// Connection test result for a relay station
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConnectionTestResult {
@@ -161,6 +176,7 @@ pub struct UpdateTokenRequest {
     pub model_limits: Option<String>,
     pub group: Option<String>,
     pub allow_ips: Option<String>,
+    pub enabled: Option<bool>,
 }
 
 /// Adapter trait for different relay station implementations
@@ -168,511 +184,28 @@ pub struct UpdateTokenRequest {
 pub trait StationAdapter: Send + Sync {
     async fn get_station_info(&self, station: &RelayStation) -> Result<StationInfo>;
     async fn get_user_info(&self, station: &RelayStation, user_id: &str) -> Result<UserInfo>;
-    async fn get_logs(&self, station: &RelayStation, page: Option<usize>, page_size: Option<usize>) -> Result<LogPaginationResponse>;
+    async fn get_logs(&self, station: &RelayStation, page: Option<usize>, page_size: Option<usize>, filters: Option<serde_json::Value>) -> Result<LogPaginationResponse>;
     async fn test_connection(&self, station: &RelayStation) -> Result<ConnectionTestResult>;
     
     // Token management methods
-    async fn list_tokens(&self, station: &RelayStation, page: Option<usize>, size: Option<usize>) -> Result<Vec<RelayStationToken>>;
+    async fn list_tokens(&self, station: &RelayStation, page: Option<usize>, size: Option<usize>) -> Result<TokenPaginationResponse>;
     async fn create_token(&self, station: &RelayStation, token_data: &CreateTokenRequest) -> Result<RelayStationToken>;
     async fn update_token(&self, station: &RelayStation, token_id: &str, token_data: &UpdateTokenRequest) -> Result<RelayStationToken>;
     async fn delete_token(&self, station: &RelayStation, token_id: &str) -> Result<()>;
+    async fn toggle_token(&self, station: &RelayStation, token_id: &str, enabled: bool) -> Result<RelayStationToken>;
+    
+    // User groups management
+    async fn get_user_groups(&self, station: &RelayStation) -> Result<serde_json::Value>;
 }
 
-/// NewAPI adapter implementation
-pub struct NewApiAdapter;
-
-#[async_trait::async_trait]
-impl StationAdapter for NewApiAdapter {
-    async fn get_station_info(&self, station: &RelayStation) -> Result<StationInfo> {
-        let client = reqwest::Client::new();
-        let user_id = station.user_id.as_deref().unwrap_or("1"); // Default to "1" if no user_id configured
-        let response = client
-            .get(&format!("{}/api/status", station.api_url))
-            .header("New-API-User", user_id)
-            .send()
-            .await?;
-
-        if response.status().is_success() {
-            let data: serde_json::Value = response.json().await?;
-            let data_obj = data["data"].as_object().ok_or_else(|| anyhow!("Invalid response format"))?;
-            
-            Ok(StationInfo {
-                name: data_obj.get("system_name")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or(&station.name)
-                    .to_string(),
-                announcement: data_obj.get("announcements")
-                    .and_then(|v| v.as_array())
-                    .and_then(|arr| arr.first())
-                    .and_then(|first| first.get("content"))
-                    .and_then(|v| v.as_str())
-                    .map(|s| s.to_string()),
-                api_url: station.api_url.clone(),
-                version: data_obj.get("version")
-                    .and_then(|v| v.as_str())
-                    .map(|s| s.to_string()),
-                quota_per_unit: data_obj.get("quota_per_unit")
-                    .and_then(|v| v.as_i64()),
-                metadata: Some({
-                    let mut map = HashMap::new();
-                    map.insert("response".to_string(), data["data"].clone());
-                    map
-                }),
-            })
-        } else {
-            Err(anyhow!("Failed to get station info: {}", response.status()))
-        }
-    }
-
-    async fn get_user_info(&self, station: &RelayStation, user_id: &str) -> Result<UserInfo> {
-        let client = reqwest::Client::new();
-        let actual_user_id = if user_id.is_empty() {
-            station.user_id.as_deref().unwrap_or("1")
-        } else {
-            user_id
-        };
-        
-        let response = client
-            .get(&format!("{}/api/user/self", station.api_url))
-            .header("Authorization", &format!("Bearer {}", station.system_token))
-            .header("New-API-User", actual_user_id)
-            .send()
-            .await?;
-
-        if response.status().is_success() {
-            let data: serde_json::Value = response.json().await?;
-            let user_data = data["data"].as_object().ok_or_else(|| anyhow!("Invalid response format"))?;
-            
-            Ok(UserInfo {
-                user_id: user_data.get("id")
-                    .and_then(|v| v.as_i64())
-                    .map(|id| id.to_string())
-                    .unwrap_or_else(|| user_id.to_string()),
-                username: user_data.get("username")
-                    .and_then(|v| v.as_str())
-                    .map(|s| s.to_string()),
-                email: user_data.get("email")
-                    .and_then(|v| v.as_str())
-                    .filter(|s| !s.is_empty())
-                    .map(|s| s.to_string()),
-                balance_remaining: user_data.get("quota")
-                    .and_then(|v| v.as_i64())
-                    .map(|q| q as f64 / 500000.0), // Convert to dollars (quota_per_unit from status)
-                amount_used: user_data.get("used_quota")
-                    .and_then(|v| v.as_i64())
-                    .map(|q| q as f64 / 500000.0), // Convert to dollars
-                request_count: user_data.get("request_count")
-                    .and_then(|v| v.as_i64()),
-                status: match user_data.get("status").and_then(|v| v.as_i64()) {
-                    Some(1) => Some("active".to_string()),
-                    Some(0) => Some("disabled".to_string()),
-                    _ => Some("unknown".to_string()),
-                },
-                metadata: Some({
-                    let mut map = HashMap::new();
-                    map.insert("response".to_string(), data["data"].clone());
-                    map
-                }),
-            })
-        } else {
-            Err(anyhow!("Failed to get user info: {}", response.status()))
-        }
-    }
-
-    async fn get_logs(&self, station: &RelayStation, page: Option<usize>, page_size: Option<usize>) -> Result<LogPaginationResponse> {
-        let client = reqwest::Client::new();
-        let page = page.unwrap_or(1);
-        let page_size = page_size.unwrap_or(10);
-        let user_id = station.user_id.as_deref().unwrap_or("1");
-        
-        let url = format!(
-            "{}/api/log/self?p={}&page_size={}&type=0&token_name=&model_name=&start_timestamp=0&end_timestamp={}&group=",
-            station.api_url,
-            page,
-            page_size,
-            chrono::Utc::now().timestamp()
-        );
-
-        let response = client
-            .get(&url)
-            .header("Authorization", &format!("Bearer {}", station.system_token))
-            .header("New-API-User", user_id)
-            .send()
-            .await?;
-
-        if response.status().is_success() {
-            let data: serde_json::Value = response.json().await?;
-            let log_data = data["data"].as_object().ok_or_else(|| anyhow!("Invalid response format"))?;
-            let empty_vec = vec![];
-            let logs = log_data.get("items").and_then(|v| v.as_array()).unwrap_or(&empty_vec);
-            
-            let items = logs.iter().map(|log| {
-                let empty_map = serde_json::Map::new();
-                let log_obj = log.as_object().unwrap_or(&empty_map);
-                
-                // Parse the "other" field to get additional metrics
-                let other_data: serde_json::Value = log_obj.get("other")
-                    .and_then(|v| v.as_str())
-                    .and_then(|s| serde_json::from_str(s).ok())
-                    .unwrap_or(serde_json::Value::Null);
-                
-                StationLogEntry {
-                    id: log_obj.get("id")
-                        .and_then(|v| v.as_i64())
-                        .map(|id| id.to_string())
-                        .unwrap_or_default(),
-                    timestamp: log_obj.get("created_at")
-                        .and_then(|v| v.as_i64())
-                        .unwrap_or(0),
-                    level: match log_obj.get("type").and_then(|v| v.as_i64()) {
-                        Some(1) => "info".to_string(),
-                        Some(2) => "api".to_string(), // API call
-                        Some(3) => "warn".to_string(),
-                        Some(4) => "error".to_string(),
-                        _ => "info".to_string(),
-                    },
-                    message: format!(
-                        "API调用 - 模型: {} | 提示: {} | 补全: {} | 花费: {}",
-                        log_obj.get("model_name").and_then(|v| v.as_str()).unwrap_or("unknown"),
-                        log_obj.get("prompt_tokens").and_then(|v| v.as_i64()).unwrap_or(0),
-                        log_obj.get("completion_tokens").and_then(|v| v.as_i64()).unwrap_or(0),
-                        log_obj.get("quota").and_then(|v| v.as_i64()).unwrap_or(0)
-                    ),
-                    user_id: log_obj.get("user_id")
-                        .and_then(|v| v.as_i64())
-                        .map(|id| id.to_string()),
-                    request_id: log_obj.get("id")
-                        .and_then(|v| v.as_i64())
-                        .map(|id| id.to_string()),
-                    // Additional fields from NewAPI
-                    model_name: log_obj.get("model_name")
-                        .and_then(|v| v.as_str())
-                        .map(|s| s.to_string()),
-                    prompt_tokens: log_obj.get("prompt_tokens").and_then(|v| v.as_i64()),
-                    completion_tokens: log_obj.get("completion_tokens").and_then(|v| v.as_i64()),
-                    quota: log_obj.get("quota").and_then(|v| v.as_i64()),
-                    token_name: log_obj.get("token_name")
-                        .and_then(|v| v.as_str())
-                        .map(|s| s.to_string()),
-                    use_time: log_obj.get("use_time").and_then(|v| v.as_i64()),
-                    is_stream: log_obj.get("is_stream").and_then(|v| v.as_bool()),
-                    channel: log_obj.get("channel").and_then(|v| v.as_i64()),
-                    group: log_obj.get("group")
-                        .and_then(|v| v.as_str())
-                        .map(|s| s.to_string()),
-                    metadata: Some({
-                        let mut map = HashMap::new();
-                        map.insert("raw".to_string(), log.clone());
-                        map.insert("other".to_string(), other_data);
-                        map
-                    }),
-                }
-            }).collect();
-
-            Ok(LogPaginationResponse {
-                items,
-                page,
-                page_size,
-                total: log_data.get("total").and_then(|v| v.as_i64()).unwrap_or(0),
-            })
-        } else {
-            Err(anyhow!("Failed to get logs: {}", response.status()))
-        }
-    }
-
-    async fn test_connection(&self, station: &RelayStation) -> Result<ConnectionTestResult> {
-        let start_time = std::time::Instant::now();
-        let client = reqwest::Client::new();
-        let user_id = station.user_id.as_deref().unwrap_or("1");
-        
-        match client
-            .get(&format!("{}/api/status", station.api_url))
-            .header("New-API-User", user_id)
-            .timeout(std::time::Duration::from_secs(10))
-            .send()
-            .await
-        {
-            Ok(response) => {
-                let response_time = start_time.elapsed().as_millis() as u64;
-                let status_code = response.status().as_u16();
-                
-                if response.status().is_success() {
-                    Ok(ConnectionTestResult {
-                        success: true,
-                        response_time: Some(response_time),
-                        message: "Connection successful".to_string(),
-                        status_code: Some(status_code),
-                        details: None,
-                    })
-                } else {
-                    Ok(ConnectionTestResult {
-                        success: false,
-                        response_time: Some(response_time),
-                        message: format!("HTTP {}", status_code),
-                        status_code: Some(status_code),
-                        details: None,
-                    })
-                }
-            }
-            Err(e) => {
-                Ok(ConnectionTestResult {
-                    success: false,
-                    response_time: None,
-                    message: format!("Connection failed: {}", e),
-                    status_code: None,
-                    details: None,
-                })
-            }
-        }
-    }
-
-    async fn list_tokens(&self, station: &RelayStation, page: Option<usize>, size: Option<usize>) -> Result<Vec<RelayStationToken>> {
-        let client = reqwest::Client::new();
-        let user_id = station.user_id.as_deref().unwrap_or("1");
-        let page = page.unwrap_or(1);
-        let size = size.unwrap_or(10);
-        
-        let url = format!("{}/api/token/?p={}&size={}", station.api_url, page, size);
-        
-        let response = client
-            .get(&url)
-            .header("Authorization", &format!("Bearer {}", station.system_token))
-            .header("New-API-User", user_id)
-            .send()
-            .await?;
-
-        if response.status().is_success() {
-            let data: serde_json::Value = response.json().await?;
-            let token_data = data["data"].as_object().ok_or_else(|| anyhow!("Invalid response format"))?;
-            let empty_vec = vec![];
-            let tokens = token_data.get("items").and_then(|v| v.as_array()).unwrap_or(&empty_vec);
-            
-            Ok(tokens.iter().map(|token| {
-                let empty_map = serde_json::Map::new();
-                let token_obj = token.as_object().unwrap_or(&empty_map);
-                RelayStationToken {
-                    id: token_obj.get("id")
-                        .and_then(|v| v.as_i64())
-                        .map(|id| id.to_string())
-                        .unwrap_or_default(),
-                    station_id: station.id.clone(),
-                    name: token_obj.get("name")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("")
-                        .to_string(),
-                    token: token_obj.get("key")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("")
-                        .to_string(),
-                    user_id: token_obj.get("user_id")
-                        .and_then(|v| v.as_i64())
-                        .map(|id| id.to_string()),
-                    enabled: token_obj.get("status")
-                        .and_then(|v| v.as_i64())
-                        .map(|s| s == 1)
-                        .unwrap_or(false),
-                    expires_at: token_obj.get("expired_time")
-                        .and_then(|v| v.as_i64())
-                        .filter(|&t| t != -1),
-                    metadata: Some({
-                        let mut map = HashMap::new();
-                        map.insert("raw".to_string(), token.clone());
-                        map.insert("used_quota".to_string(), 
-                            token_obj.get("used_quota").cloned().unwrap_or(serde_json::Value::Null));
-                        map.insert("remain_quota".to_string(), 
-                            token_obj.get("remain_quota").cloned().unwrap_or(serde_json::Value::Null));
-                        map.insert("group".to_string(), 
-                            token_obj.get("group").cloned().unwrap_or(serde_json::Value::Null));
-                        map
-                    }),
-                    created_at: token_obj.get("created_time")
-                        .and_then(|v| v.as_i64())
-                        .unwrap_or(0),
-                }
-            }).collect())
-        } else {
-            Err(anyhow!("Failed to list tokens: {}", response.status()))
-        }
-    }
-
-    async fn create_token(&self, station: &RelayStation, token_data: &CreateTokenRequest) -> Result<RelayStationToken> {
-        let client = reqwest::Client::new();
-        let user_id = station.user_id.as_deref().unwrap_or("1");
-        
-        let request_body = serde_json::json!({
-            "name": token_data.name,
-            "remain_quota": token_data.remain_quota.unwrap_or(500000),
-            "expired_time": token_data.expired_time.unwrap_or(-1),
-            "unlimited_quota": token_data.unlimited_quota.unwrap_or(true),
-            "model_limits_enabled": token_data.model_limits_enabled.unwrap_or(false),
-            "model_limits": token_data.model_limits.as_deref().unwrap_or(""),
-            "group": token_data.group.as_deref().unwrap_or("Claude Code专用"),
-            "allow_ips": token_data.allow_ips.as_deref().unwrap_or("")
-        });
-
-        let response = client
-            .post(&format!("{}/api/token/", station.api_url))
-            .header("Authorization", &format!("Bearer {}", station.system_token))
-            .header("New-API-User", user_id)
-            .header("Content-Type", "application/json")
-            .json(&request_body)
-            .send()
-            .await?;
-
-        if response.status().is_success() {
-            let data: serde_json::Value = response.json().await?;
-            if let Some(token_obj) = data["data"].as_object() {
-                Ok(RelayStationToken {
-                    id: token_obj.get("id")
-                        .and_then(|v| v.as_i64())
-                        .map(|id| id.to_string())
-                        .unwrap_or_default(),
-                    station_id: station.id.clone(),
-                    name: token_obj.get("name")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("")
-                        .to_string(),
-                    token: token_obj.get("key")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("")
-                        .to_string(),
-                    user_id: token_obj.get("user_id")
-                        .and_then(|v| v.as_i64())
-                        .map(|id| id.to_string()),
-                    enabled: token_obj.get("status")
-                        .and_then(|v| v.as_i64())
-                        .map(|s| s == 1)
-                        .unwrap_or(false),
-                    expires_at: token_obj.get("expired_time")
-                        .and_then(|v| v.as_i64())
-                        .filter(|&t| t != -1),
-                    metadata: Some({
-                        let mut map = HashMap::new();
-                        map.insert("raw".to_string(), data["data"].clone());
-                        map
-                    }),
-                    created_at: token_obj.get("created_time")
-                        .and_then(|v| v.as_i64())
-                        .unwrap_or(chrono::Utc::now().timestamp()),
-                })
-            } else {
-                Err(anyhow!("Invalid response format"))
-            }
-        } else {
-            Err(anyhow!("Failed to create token: {}", response.status()))
-        }
-    }
-
-    async fn update_token(&self, station: &RelayStation, token_id: &str, token_data: &UpdateTokenRequest) -> Result<RelayStationToken> {
-        let client = reqwest::Client::new();
-        let user_id = station.user_id.as_deref().unwrap_or("1");
-        
-        let mut request_body = serde_json::Map::new();
-        request_body.insert("id".to_string(), serde_json::Value::Number(token_data.id.into()));
-        
-        if let Some(name) = &token_data.name {
-            request_body.insert("name".to_string(), serde_json::Value::String(name.clone()));
-        }
-        if let Some(quota) = token_data.remain_quota {
-            request_body.insert("remain_quota".to_string(), serde_json::Value::Number(quota.into()));
-        }
-        if let Some(expired) = token_data.expired_time {
-            request_body.insert("expired_time".to_string(), serde_json::Value::Number(expired.into()));
-        }
-        if let Some(unlimited) = token_data.unlimited_quota {
-            request_body.insert("unlimited_quota".to_string(), serde_json::Value::Bool(unlimited));
-        }
-        if let Some(enabled) = token_data.model_limits_enabled {
-            request_body.insert("model_limits_enabled".to_string(), serde_json::Value::Bool(enabled));
-        }
-        if let Some(limits) = &token_data.model_limits {
-            request_body.insert("model_limits".to_string(), serde_json::Value::String(limits.clone()));
-        }
-        if let Some(group) = &token_data.group {
-            request_body.insert("group".to_string(), serde_json::Value::String(group.clone()));
-        }
-        if let Some(ips) = &token_data.allow_ips {
-            request_body.insert("allow_ips".to_string(), serde_json::Value::String(ips.clone()));
-        }
-
-        let response = client
-            .put(&format!("{}/api/token/", station.api_url))
-            .header("Authorization", &format!("Bearer {}", station.system_token))
-            .header("New-API-User", user_id)
-            .header("Content-Type", "application/json")
-            .json(&request_body)
-            .send()
-            .await?;
-
-        if response.status().is_success() {
-            let data: serde_json::Value = response.json().await?;
-            if let Some(token_obj) = data["data"].as_object() {
-                Ok(RelayStationToken {
-                    id: token_obj.get("id")
-                        .and_then(|v| v.as_i64())
-                        .map(|id| id.to_string())
-                        .unwrap_or(token_id.to_string()),
-                    station_id: station.id.clone(),
-                    name: token_obj.get("name")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("")
-                        .to_string(),
-                    token: token_obj.get("key")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("")
-                        .to_string(),
-                    user_id: token_obj.get("user_id")
-                        .and_then(|v| v.as_i64())
-                        .map(|id| id.to_string()),
-                    enabled: token_obj.get("status")
-                        .and_then(|v| v.as_i64())
-                        .map(|s| s == 1)
-                        .unwrap_or(false),
-                    expires_at: token_obj.get("expired_time")
-                        .and_then(|v| v.as_i64())
-                        .filter(|&t| t != -1),
-                    metadata: Some({
-                        let mut map = HashMap::new();
-                        map.insert("raw".to_string(), data["data"].clone());
-                        map
-                    }),
-                    created_at: token_obj.get("created_time")
-                        .and_then(|v| v.as_i64())
-                        .unwrap_or(0),
-                })
-            } else {
-                Err(anyhow!("Invalid response format"))
-            }
-        } else {
-            Err(anyhow!("Failed to update token: {}", response.status()))
-        }
-    }
-
-    async fn delete_token(&self, station: &RelayStation, token_id: &str) -> Result<()> {
-        let client = reqwest::Client::new();
-        let user_id = station.user_id.as_deref().unwrap_or("1");
-        
-        let response = client
-            .delete(&format!("{}/api/token/{}", station.api_url, token_id))
-            .header("Authorization", &format!("Bearer {}", station.system_token))
-            .header("New-API-User", user_id)
-            .send()
-            .await?;
-
-        if response.status().is_success() {
-            Ok(())
-        } else {
-            Err(anyhow!("Failed to delete token: {}", response.status()))
-        }
-    }
-}
 
 /// Factory to create adapters based on station type
-pub fn create_adapter(adapter_type: &RelayStationAdapter) -> NewApiAdapter {
+pub fn create_adapter(adapter_type: &RelayStationAdapter) -> Box<dyn StationAdapter> {
     match adapter_type {
-        RelayStationAdapter::Newapi => NewApiAdapter,
-        RelayStationAdapter::Oneapi => NewApiAdapter, // OneAPI is compatible with NewAPI
-        RelayStationAdapter::Custom => NewApiAdapter, // Default to NewAPI for custom
+        RelayStationAdapter::Newapi => Box::new(NewApiAdapter),
+        RelayStationAdapter::Oneapi => Box::new(NewApiAdapter), // OneAPI is compatible with NewAPI
+        RelayStationAdapter::Yourapi => Box::new(YourApiAdapter::new()),
+        RelayStationAdapter::Custom => Box::new(CustomAdapter), // Custom adapter for simple configurations
     }
 }
 
@@ -762,6 +295,7 @@ impl RelayStationManager {
                 adapter: match row.get::<_, String>("adapter")?.as_str() {
                     "newapi" => RelayStationAdapter::Newapi,
                     "oneapi" => RelayStationAdapter::Oneapi,
+                    "yourapi" => RelayStationAdapter::Yourapi,
                     "custom" => RelayStationAdapter::Custom,
                     _ => RelayStationAdapter::Newapi,
                 },
@@ -803,6 +337,7 @@ impl RelayStationManager {
                 match station.adapter {
                     RelayStationAdapter::Newapi => "newapi",
                     RelayStationAdapter::Oneapi => "oneapi",
+                    RelayStationAdapter::Yourapi => "yourapi",
                     RelayStationAdapter::Custom => "custom",
                 },
                 match station.auth_method {
@@ -842,6 +377,7 @@ impl RelayStationManager {
                 adapter: match row.get::<_, String>("adapter")?.as_str() {
                     "newapi" => RelayStationAdapter::Newapi,
                     "oneapi" => RelayStationAdapter::Oneapi,
+                    "yourapi" => RelayStationAdapter::Yourapi,
                     "custom" => RelayStationAdapter::Custom,
                     _ => RelayStationAdapter::Newapi,
                 },
@@ -876,6 +412,8 @@ impl RelayStationManager {
                 "name" => query_parts.push("name = ?"),
                 "description" => query_parts.push("description = ?"),
                 "api_url" => query_parts.push("api_url = ?"),
+                "adapter" => query_parts.push("adapter = ?"),
+                "auth_method" => query_parts.push("auth_method = ?"),
                 "system_token" => query_parts.push("system_token = ?"),
                 "user_id" => query_parts.push("user_id = ?"),
                 "enabled" => query_parts.push("enabled = ?"),
@@ -905,6 +443,12 @@ impl RelayStationManager {
                     }
                     "api_url" => {
                         params_vec.push(rusqlite::types::Value::Text(value.as_str().unwrap_or("").to_string()));
+                    }
+                    "adapter" => {
+                        params_vec.push(rusqlite::types::Value::Text(value.as_str().unwrap_or("newapi").to_string()));
+                    }
+                    "auth_method" => {
+                        params_vec.push(rusqlite::types::Value::Text(value.as_str().unwrap_or("bearer_token").to_string()));
                     }
                     "system_token" => {
                         params_vec.push(rusqlite::types::Value::Text(value.as_str().unwrap_or("").to_string()));
@@ -938,116 +482,119 @@ impl RelayStationManager {
         Ok(())
     }
 
-    pub fn list_tokens(&self, station_id: &str) -> Result<Vec<RelayStationToken>> {
-        let conn = self.db.lock().unwrap();
-        let mut stmt = conn.prepare("SELECT * FROM relay_station_tokens WHERE station_id = ?1 ORDER BY created_at DESC")?;
+    // pub fn list_tokens(&self, station_id: &str) -> Result<Vec<RelayStationToken>> {
+    //     let conn = self.db.lock().unwrap();
+    //     let mut stmt = conn.prepare("SELECT * FROM relay_station_tokens WHERE station_id = ?1 ORDER BY created_at DESC")?;
         
-        let token_iter = stmt.query_map([station_id], |row| {
-            let metadata_str: Option<String> = row.get("metadata")?;
-            let metadata = if let Some(meta_str) = metadata_str {
-                serde_json::from_str(&meta_str).ok()
-            } else {
-                None
-            };
+    //     let token_iter = stmt.query_map([station_id], |row| {
+    //         let metadata_str: Option<String> = row.get("metadata")?;
+    //         let metadata = if let Some(meta_str) = metadata_str {
+    //             serde_json::from_str(&meta_str).ok()
+    //         } else {
+    //             None
+    //         };
 
-            Ok(RelayStationToken {
-                id: row.get("id")?,
-                station_id: row.get("station_id")?,
-                name: row.get("name")?,
-                token: row.get("token")?,
-                user_id: row.get("user_id")?,
-                enabled: row.get::<_, i32>("enabled")? != 0,
-                expires_at: row.get("expires_at")?,
-                metadata,
-                created_at: row.get("created_at")?,
-            })
-        })?;
+    //         Ok(RelayStationToken {
+    //             id: row.get("id")?,
+    //             station_id: row.get("station_id")?,
+    //             name: row.get("name")?,
+    //             token: row.get("token")?,
+    //             user_id: row.get("user_id")?,
+    //             enabled: row.get::<_, i32>("enabled")? != 0,
+    //             expires_at: row.get("expires_at")?,
+    //             group: None, // Database doesn't store groups, they come from API
+    //             remain_quota: None, // Database doesn't store quotas, they come from API
+    //             unlimited_quota: None, // Database doesn't store quota settings, they come from API
+    //             metadata,
+    //             created_at: row.get("created_at")?,
+    //         })
+    //     })?;
 
-        token_iter.collect::<Result<Vec<_>, _>>().map_err(|e| anyhow!("Database error: {}", e))
-    }
+    //     token_iter.collect::<Result<Vec<_>, _>>().map_err(|e| anyhow!("Database error: {}", e))
+    // }
 
-    pub fn add_token(&self, token: &RelayStationToken) -> Result<()> {
-        let conn = self.db.lock().unwrap();
+    // pub fn add_token(&self, token: &RelayStationToken) -> Result<()> {
+    //     let conn = self.db.lock().unwrap();
         
-        let metadata_str = if let Some(metadata) = &token.metadata {
-            Some(serde_json::to_string(metadata)?)
-        } else {
-            None
-        };
+    //     let metadata_str = if let Some(metadata) = &token.metadata {
+    //         Some(serde_json::to_string(metadata)?)
+    //     } else {
+    //         None
+    //     };
 
-        conn.execute(
-            "INSERT INTO relay_station_tokens (id, station_id, name, token, user_id, enabled, expires_at, metadata, created_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
-            params![
-                token.id,
-                token.station_id,
-                token.name,
-                token.token,
-                token.user_id,
-                if token.enabled { 1 } else { 0 },
-                token.expires_at,
-                metadata_str,
-                token.created_at,
-            ],
-        )?;
+    //     conn.execute(
+    //         "INSERT INTO relay_station_tokens (id, station_id, name, token, user_id, enabled, expires_at, metadata, created_at)
+    //          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+    //         params![
+    //             token.id,
+    //             token.station_id,
+    //             token.name,
+    //             token.token,
+    //             token.user_id,
+    //             if token.enabled { 1 } else { 0 },
+    //             token.expires_at,
+    //             metadata_str,
+    //             token.created_at,
+    //         ],
+    //     )?;
 
-        Ok(())
-    }
+    //     Ok(())
+    // }
 
-    pub fn update_token(&self, token_id: &str, updates: &HashMap<String, serde_json::Value>) -> Result<()> {
-        let conn = self.db.lock().unwrap();
+    // pub fn update_token(&self, token_id: &str, updates: &HashMap<String, serde_json::Value>) -> Result<()> {
+    //     let conn = self.db.lock().unwrap();
         
-        let mut query_parts = Vec::new();
+    //     let mut query_parts = Vec::new();
 
-        for (key, _) in updates {
-            match key.as_str() {
-                "name" => query_parts.push("name = ?"),
-                "token" => query_parts.push("token = ?"),
-                "user_id" => query_parts.push("user_id = ?"),
-                "enabled" => query_parts.push("enabled = ?"),
-                _ => {}
-            }
-        }
+    //     for (key, _) in updates {
+    //         match key.as_str() {
+    //             "name" => query_parts.push("name = ?"),
+    //             "token" => query_parts.push("token = ?"),
+    //             "user_id" => query_parts.push("user_id = ?"),
+    //             "enabled" => query_parts.push("enabled = ?"),
+    //             _ => {}
+    //         }
+    //     }
 
-        if !query_parts.is_empty() {
-            let query = format!("UPDATE relay_station_tokens SET {} WHERE id = ?", query_parts.join(", "));
+    //     if !query_parts.is_empty() {
+    //         let query = format!("UPDATE relay_station_tokens SET {} WHERE id = ?", query_parts.join(", "));
             
-            let mut params_vec: Vec<rusqlite::types::Value> = Vec::new();
-            for (key, value) in updates {
-                match key.as_str() {
-                    "name" => {
-                        params_vec.push(rusqlite::types::Value::Text(value.as_str().unwrap_or("").to_string()));
-                    }
-                    "token" => {
-                        params_vec.push(rusqlite::types::Value::Text(value.as_str().unwrap_or("").to_string()));
-                    }
-                    "user_id" => {
-                        if let Some(user_id) = value.as_str() {
-                            params_vec.push(rusqlite::types::Value::Text(user_id.to_string()));
-                        } else {
-                            params_vec.push(rusqlite::types::Value::Null);
-                        }
-                    }
-                    "enabled" => {
-                        let enabled_val = if value.as_bool().unwrap_or(false) { 1i64 } else { 0i64 };
-                        params_vec.push(rusqlite::types::Value::Integer(enabled_val));
-                    }
-                    _ => {}
-                }
-            }
-            params_vec.push(rusqlite::types::Value::Text(token_id.to_string()));
+    //         let mut params_vec: Vec<rusqlite::types::Value> = Vec::new();
+    //         for (key, value) in updates {
+    //             match key.as_str() {
+    //                 "name" => {
+    //                     params_vec.push(rusqlite::types::Value::Text(value.as_str().unwrap_or("").to_string()));
+    //                 }
+    //                 "token" => {
+    //                     params_vec.push(rusqlite::types::Value::Text(value.as_str().unwrap_or("").to_string()));
+    //                 }
+    //                 "user_id" => {
+    //                     if let Some(user_id) = value.as_str() {
+    //                         params_vec.push(rusqlite::types::Value::Text(user_id.to_string()));
+    //                     } else {
+    //                         params_vec.push(rusqlite::types::Value::Null);
+    //                     }
+    //                 }
+    //                 "enabled" => {
+    //                     let enabled_val = if value.as_bool().unwrap_or(false) { 1i64 } else { 0i64 };
+    //                     params_vec.push(rusqlite::types::Value::Integer(enabled_val));
+    //                 }
+    //                 _ => {}
+    //             }
+    //         }
+    //         params_vec.push(rusqlite::types::Value::Text(token_id.to_string()));
 
-            conn.execute(&query, rusqlite::params_from_iter(params_vec))?;
-        }
+    //         conn.execute(&query, rusqlite::params_from_iter(params_vec))?;
+    //     }
 
-        Ok(())
-    }
+    //     Ok(())
+    // }
 
-    pub fn delete_token(&self, token_id: &str) -> Result<()> {
-        let conn = self.db.lock().unwrap();
-        conn.execute("DELETE FROM relay_station_tokens WHERE id = ?1", [token_id])?;
-        Ok(())
-    }
+    // pub fn delete_token(&self, token_id: &str) -> Result<()> {
+    //     let conn = self.db.lock().unwrap();
+    //     conn.execute("DELETE FROM relay_station_tokens WHERE id = ?1", [token_id])?;
+    //     Ok(())
+    // }
 }
 
 // Tauri command handlers
@@ -1160,7 +707,7 @@ pub async fn get_station_info(station_id: String, app: AppHandle) -> Result<Stat
 }
 
 #[tauri::command]
-pub async fn list_station_tokens(station_id: String, page: Option<usize>, size: Option<usize>, app: AppHandle) -> Result<Vec<RelayStationToken>, String> {
+pub async fn list_station_tokens(station_id: String, page: Option<usize>, size: Option<usize>, app: AppHandle) -> Result<TokenPaginationResponse, String> {
     let state: State<Mutex<Option<RelayStationManager>>> = app.state();
     
     // Get the station first, releasing the lock before the async call
@@ -1169,7 +716,12 @@ pub async fn list_station_tokens(station_id: String, page: Option<usize>, size: 
         if let Some(manager) = manager_lock.as_ref() {
             manager.get_station(&station_id).map_err(|e| format!("Failed to get station: {}", e))?
         } else {
-            return Ok(Vec::new());
+            return Ok(TokenPaginationResponse {
+                items: Vec::new(),
+                page: 1,
+                page_size: 10,
+                total: 0,
+            });
         }
     };
     
@@ -1177,7 +729,12 @@ pub async fn list_station_tokens(station_id: String, page: Option<usize>, size: 
         let adapter = create_adapter(&station.adapter);
         adapter.list_tokens(&station, page, size).await.map_err(|e| format!("Failed to list tokens: {}", e))
     } else {
-        Ok(Vec::new())
+        Ok(TokenPaginationResponse {
+            items: Vec::new(),
+            page: 1,
+            page_size: 10,
+            total: 0,
+        })
     }
 }
 
@@ -1293,6 +850,7 @@ pub async fn get_station_logs(
     station_id: String,
     page: Option<usize>,
     page_size: Option<usize>,
+    filters: Option<serde_json::Value>,
     app: AppHandle,
 ) -> Result<LogPaginationResponse, String> {
     let state: State<Mutex<Option<RelayStationManager>>> = app.state();
@@ -1309,7 +867,7 @@ pub async fn get_station_logs(
     
     if let Some(station) = station {
         let adapter = create_adapter(&station.adapter);
-        adapter.get_logs(&station, page, page_size).await.map_err(|e| format!("Failed to get logs: {}", e))
+        adapter.get_logs(&station, page, page_size, filters).await.map_err(|e| format!("Failed to get logs: {}", e))
     } else {
         Err("Station not found".to_string())
     }
@@ -1332,6 +890,55 @@ pub async fn test_station_connection(station_id: String, app: AppHandle) -> Resu
     if let Some(station) = station {
         let adapter = create_adapter(&station.adapter);
         adapter.test_connection(&station).await.map_err(|e| format!("Failed to test connection: {}", e))
+    } else {
+        Err("Station not found".to_string())
+    }
+}
+
+#[tauri::command]
+pub async fn api_user_self_groups(station_id: String, app: AppHandle) -> Result<serde_json::Value, String> {
+    let state: State<Mutex<Option<RelayStationManager>>> = app.state();
+    
+    // Get the station first, releasing the lock before the async call
+    let station = {
+        let manager_lock = state.lock().map_err(|e| format!("Lock error: {}", e))?;
+        if let Some(manager) = manager_lock.as_ref() {
+            manager.get_station(&station_id).map_err(|e| format!("Failed to get station: {}", e))?
+        } else {
+            return Err("Relay station manager not initialized".to_string());
+        }
+    };
+    
+    if let Some(station) = station {
+        let adapter = create_adapter(&station.adapter);
+        adapter.get_user_groups(&station).await.map_err(|e| format!("Failed to get user groups: {}", e))
+    } else {
+        Err("Station not found".to_string())
+    }
+}
+
+#[tauri::command]
+pub async fn toggle_station_token(
+    station_id: String,
+    token_id: String,
+    enabled: bool,
+    app: AppHandle,
+) -> Result<RelayStationToken, String> {
+    let state: State<Mutex<Option<RelayStationManager>>> = app.state();
+    
+    // Get the station first, releasing the lock before the async call
+    let station = {
+        let manager_lock = state.lock().map_err(|e| format!("Lock error: {}", e))?;
+        if let Some(manager) = manager_lock.as_ref() {
+            manager.get_station(&station_id).map_err(|e| format!("Failed to get station: {}", e))?
+        } else {
+            return Err("Relay station manager not initialized".to_string());
+        }
+    };
+    
+    if let Some(station) = station {
+        let adapter = create_adapter(&station.adapter);
+        adapter.toggle_token(&station, &token_id, enabled).await.map_err(|e| format!("Failed to toggle token: {}", e))
     } else {
         Err("Station not found".to_string())
     }

@@ -396,54 +396,54 @@ pub fn test_provider_connection(base_url: String) -> Result<String, String> {
     // 目前返回一个简单的成功消息
     Ok(i18n::t_with_args("provider.connection_test_complete", &[("url", &test_url)]))
 }
-async fn terminate_claude_processes(app: &AppHandle) {
-    log::info!("{}", i18n::t("process.terminating_claude_processes"));
+// async fn terminate_claude_processes(app: &AppHandle) {
+//     log::info!("{}", i18n::t("process.terminating_claude_processes"));
     
-    // 获取进程注册表
-    let registry = app.state::<ProcessRegistryState>();
+//     // 获取进程注册表
+//     let registry = app.state::<ProcessRegistryState>();
     
-    // 获取所有活动的Claude会话
-    match registry.0.get_running_claude_sessions() {
-        Ok(sessions) => {
-            log::info!("{}", i18n::t_with_args("process.found_active_sessions", &[("count", &sessions.len().to_string())]));
+//     // 获取所有活动的Claude会话
+//     match registry.0.get_running_claude_sessions() {
+//         Ok(sessions) => {
+//             log::info!("{}", i18n::t_with_args("process.found_active_sessions", &[("count", &sessions.len().to_string())]));
             
-            for session in sessions {
-                let session_id_str = match &session.process_type {
-                    crate::process::registry::ProcessType::ClaudeSession { session_id } => session_id.as_str(),
-                    _ => "unknown",
-                };
+//             for session in sessions {
+//                 let session_id_str = match &session.process_type {
+//                     crate::process::registry::ProcessType::ClaudeSession { session_id } => session_id.as_str(),
+//                     _ => "unknown",
+//                 };
                 
-                log::info!("{}", i18n::t_with_args("process.terminating_session", &[("session_id", session_id_str), ("run_id", &session.run_id.to_string()), ("pid", &session.pid.to_string())]));
+//                 log::info!("{}", i18n::t_with_args("process.terminating_session", &[("session_id", session_id_str), ("run_id", &session.run_id.to_string()), ("pid", &session.pid.to_string())]));
                 
-                // 尝试优雅地终止进程
-                match registry.0.kill_process(session.run_id).await {
-                    Ok(success) => {
-                        if success {
-                            log::info!("{}", i18n::t_with_args("process.session_terminated", &[("run_id", &session.run_id.to_string())]));
-                        } else {
-                            log::warn!("{}", i18n::t_with_args("process.session_terminate_false", &[("run_id", &session.run_id.to_string())]));
+//                 // 尝试优雅地终止进程
+//                 match registry.0.kill_process(session.run_id).await {
+//                     Ok(success) => {
+//                         if success {
+//                             log::info!("{}", i18n::t_with_args("process.session_terminated", &[("run_id", &session.run_id.to_string())]));
+//                         } else {
+//                             log::warn!("{}", i18n::t_with_args("process.session_terminate_false", &[("run_id", &session.run_id.to_string())]));
                             
-                            // 尝试强制终止
-                            if let Err(e) = registry.0.kill_process_by_pid(session.run_id, session.pid as u32) {
-                                log::error!("{}", i18n::t_with_args("process.force_terminate_failed", &[("error", &e.to_string())]));
-                            }
-                        }
-                    }
-                    Err(e) => {
-                        log::error!("{}", i18n::t_with_args("process.session_terminate_failed", &[("run_id", &session.run_id.to_string()), ("error", &e.to_string())]));
+//                             // 尝试强制终止
+//                             if let Err(e) = registry.0.kill_process_by_pid(session.run_id, session.pid as u32) {
+//                                 log::error!("{}", i18n::t_with_args("process.force_terminate_failed", &[("error", &e.to_string())]));
+//                             }
+//                         }
+//                     }
+//                     Err(e) => {
+//                         log::error!("{}", i18n::t_with_args("process.session_terminate_failed", &[("run_id", &session.run_id.to_string()), ("error", &e.to_string())]));
                         
-                        // 尝试强制终止
-                        if let Err(e2) = registry.0.kill_process_by_pid(session.run_id, session.pid as u32) {
-                            log::error!("{}", i18n::t_with_args("process.force_terminate_also_failed", &[("error", &e2.to_string())]));
-                        }
-                    }
-                }
-            }
-        }
-        Err(e) => {
-            log::error!("{}", i18n::t_with_args("process.get_sessions_failed", &[("error", &e.to_string())]));
-        }
-    }
+//                         // 尝试强制终止
+//                         if let Err(e2) = registry.0.kill_process_by_pid(session.run_id, session.pid as u32) {
+//                             log::error!("{}", i18n::t_with_args("process.force_terminate_also_failed", &[("error", &e2.to_string())]));
+//                         }
+//                     }
+//                 }
+//             }
+//         }
+//         Err(e) => {
+//             log::error!("{}", i18n::t_with_args("process.get_sessions_failed", &[("error", &e.to_string())]));
+//         }
+//     }
     
-    log::info!("{}", i18n::t("process.termination_complete"));
-}
+//     log::info!("{}", i18n::t("process.termination_complete"));
+// }

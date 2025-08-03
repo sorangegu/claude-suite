@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Claude Workbench",
+    "title": "Claude Suite",
     "subtitle": "专业的 Claude CLI 桌面应用和开发工具包"
   },
   "navigation": {
@@ -979,7 +979,8 @@
     },
     "adapters": {
       "newapi": "NewAPI",
-      "oneapi": "OneAPI", 
+      "oneapi": "OneAPI",
+      "yourapi": "YourAPI", 
       "custom": "自定义"
     },
     "authMethods": {

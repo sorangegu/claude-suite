@@ -488,7 +488,7 @@ export interface ImportServerResult {
 /**
  * Relay station adapter type for different station implementations
  */
-export type RelayStationAdapter = 'newapi' | 'oneapi' | 'custom';
+export type RelayStationAdapter = 'newapi' | 'oneapi' | 'yourapi' | 'custom';
 
 /**
  * Authentication method for relay stations
@@ -568,6 +568,32 @@ export interface StationInfo {
 }
 
 /**
+ * Token group information from API response
+ */
+export interface TokenGroup {
+  /** Group identifier (group name) */
+  id: string;
+  /** Group name (same as id) */
+  name: string;
+  /** Group description */
+  description?: string;
+  /** Group ratio */
+  ratio?: number;
+}
+
+/**
+ * API response structure for user groups
+ */
+export interface UserGroupsResponse {
+  success: boolean;
+  message: string;
+  data: Record<string, {
+    desc: string;
+    ratio: number;
+  }>;
+}
+
+/**
  * Token configuration for a relay station
  */
 export interface RelayStationToken {
@@ -585,6 +611,12 @@ export interface RelayStationToken {
   enabled: boolean;
   /** Token expiration timestamp if applicable */
   expires_at?: number;
+  /** Token group */
+  group?: string;
+  /** Remaining quota for the token */
+  remain_quota?: number;
+  /** Whether the token has unlimited quota */
+  unlimited_quota?: boolean;
   /** Additional token metadata */
   metadata?: Record<string, any>;
   /** Creation timestamp */
@@ -635,6 +667,8 @@ export interface UpdateTokenRequest {
   group?: string;
   /** Allowed IP addresses */
   allow_ips?: string;
+  /** Whether the token is enabled */
+  enabled?: boolean;
 }
 
 /**
@@ -709,6 +743,20 @@ export interface LogPaginationResponse {
   /** Number of items per page */
   page_size: number;
   /** Total number of log entries */
+  total: number;
+}
+
+/**
+ * Paginated token response
+ */
+export interface TokenPaginationResponse {
+  /** Token entries for the current page */
+  items: RelayStationToken[];
+  /** Current page number */
+  page: number;
+  /** Number of items per page */
+  page_size: number;
+  /** Total number of token entries */
   total: number;
 }
 
@@ -2525,15 +2573,15 @@ export const api = {
   },
 
   /**
-   * Lists all tokens for a relay station
+   * Lists all tokens for a relay station with pagination
    * @param stationId - The ID of the relay station
    * @param page - Optional page number for pagination
    * @param size - Optional page size for pagination
-   * @returns Promise resolving to array of tokens
+   * @returns Promise resolving to paginated tokens response
    */
-  async listStationTokens(stationId: string, page?: number, size?: number): Promise<RelayStationToken[]> {
+  async listStationTokens(stationId: string, page?: number, size?: number): Promise<TokenPaginationResponse> {
     try {
-      return await invoke<RelayStationToken[]>("list_station_tokens", { stationId, page, size });
+      return await invoke<TokenPaginationResponse>("list_station_tokens", { stationId, page, size });
     } catch (error) {
       console.error("Failed to list station tokens:", error);
       throw error;
@@ -2587,6 +2635,46 @@ export const api = {
   },
 
   /**
+   * Toggles a token's enabled state
+   * @param stationId - The ID of the relay station
+   * @param tokenId - The ID of the token to toggle
+   * @param enabled - Whether the token should be enabled
+   * @returns Promise resolving to the updated token
+   */
+  async toggleStationToken(stationId: string, tokenId: string, enabled: boolean): Promise<RelayStationToken> {
+    try {
+      return await invoke<RelayStationToken>("toggle_station_token", { stationId, tokenId, enabled });
+    } catch (error) {
+      console.error("Failed to toggle station token:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Gets available token groups for a user
+   * @param stationId - The ID of the relay station
+   * @returns Promise resolving to array of available groups
+   */
+  async getUserTokenGroups(stationId: string): Promise<TokenGroup[]> {
+    try {
+      const response = await invoke<UserGroupsResponse>("api_user_self_groups", { stationId });
+      if (response.success && response.data) {
+        // Convert the response object to TokenGroup array
+        return Object.entries(response.data).map(([groupName, groupData]) => ({
+          id: groupName,
+          name: groupName,
+          description: groupData.desc,
+          ratio: groupData.ratio,
+        }));
+      }
+      return [];
+    } catch (error) {
+      console.error("Failed to get user token groups:", error);
+      throw error;
+    }
+  },
+
+  /**
    * Gets user information for a relay station
    * @param stationId - The ID of the relay station
    * @param userId - The user ID to get information for
@@ -2602,15 +2690,16 @@ export const api = {
   },
 
   /**
-   * Gets logs for a relay station with pagination
+   * Gets logs for a relay station with pagination and optional filtering
    * @param stationId - The ID of the relay station
    * @param page - Page number for pagination (1-based)
    * @param pageSize - Number of log entries per page
+   * @param filters - Optional filtering parameters
    * @returns Promise resolving to paginated log response
    */
-  async getStationLogs(stationId: string, page?: number, pageSize?: number): Promise<LogPaginationResponse> {
+  async getStationLogs(stationId: string, page?: number, pageSize?: number, filters?: any): Promise<LogPaginationResponse> {
     try {
-      return await invoke<LogPaginationResponse>("get_station_logs", { stationId, page, pageSize });
+      return await invoke<LogPaginationResponse>("get_station_logs", { stationId, page, pageSize, filters });
     } catch (error) {
       console.error("Failed to get station logs:", error);
       throw error;

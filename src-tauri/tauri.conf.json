@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Claude Workbench",
+  "productName": "Claude Suite",
   "version": "1.0.0",
   "identifier": "claude.workbench.app",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Claude Workbench",
+        "title": "Claude Suite",
         "width": 800,
         "height": 600
       }
@@ -65,6 +65,6 @@
     "copyright": "",
     "category": "DeveloperTool",
     "shortDescription": "Professional GUI Toolkit for Claude CLI (Windows Only)",
-    "longDescription": "Claude Workbench is a professional desktop application and comprehensive toolkit for Claude CLI, designed specifically for Windows users. Provides an intuitive interface for AI-powered development workflows, project management, and advanced Claude interactions."
+    "longDescription": "Claude Suite is a professional desktop application and comprehensive toolkit for Claude CLI, designed specifically for Windows users. Provides an intuitive interface for AI-powered development workflows, project management, and advanced Claude interactions."
   }
 }

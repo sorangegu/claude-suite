@@ -1,4 +1,4 @@
-# Claude Workbench
+# Claude Suite
 
 > 专为 Windows 用户设计的 Claude CLI 桌面管理工具
 >
@@ -6,9 +6,9 @@
 > 1. 更换代理商切换方式为直接修改json文件
 > 2. 全面完善i18n
 
-[![Release](https://img.shields.io/github/v/release/anyme123/claude-workbench?color=brightgreen)](https://github.com/anyme123/claude-workbench/releases)
+[![Release](https://img.shields.io/github/v/release/anyme123/claude-suite?color=brightgreen)](https://github.com/anyme123/claude-suite/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Windows-blue)](https://github.com/anyme123/claude-workbench)
+[![Platform](https://img.shields.io/badge/platform-Windows-blue)](https://github.com/anyme123/claude-suite)
 
 ## ✨ 特性
 

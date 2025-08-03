@@ -59,7 +59,7 @@ use commands::relay_stations::{
     list_relay_stations, get_relay_station, add_relay_station, update_relay_station,
     delete_relay_station, get_station_info, list_station_tokens, add_station_token,
     update_station_token, delete_station_token, get_token_user_info, get_station_logs,
-    test_station_connection, RelayStationManager,
+    test_station_connection, api_user_self_groups, toggle_station_token, RelayStationManager,
 };
 use process::ProcessRegistryState;
 use std::sync::Mutex;
@@ -268,6 +268,8 @@ fn main() {
             get_token_user_info,
             get_station_logs,
             test_station_connection,
+            api_user_self_groups,
+            toggle_station_token,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

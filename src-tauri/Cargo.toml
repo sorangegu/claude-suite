@@ -1,7 +1,7 @@
 [package]
-name = "claude-workbench"
+name = "claude-suite"
 version = "1.0.0"
-description = "Claude Workbench - Professional desktop application and toolkit for Claude CLI"
+description = "Claude Suite - Professional desktop application and toolkit for Claude CLI"
 authors = ["mufeedvh", "123vviekr"]
 license = "AGPL-3.0"
 edition = "2021"
@@ -9,7 +9,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [lib]
-name = "claude_workbench_lib"
+name = "claude_suite_lib"
 crate-type = ["lib", "cdylib", "staticlib"]
 
 [build-dependencies]
@@ -49,6 +49,7 @@ uuid = { version = "1.6", features = ["v4", "serde"] }
 walkdir = "2"
 serde_yaml = "0.9"
 once_cell = "1.19"
+urlencoding = "2.1"
 
 
 [profile.release]

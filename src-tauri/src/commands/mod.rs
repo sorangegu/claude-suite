@@ -7,3 +7,4 @@ pub mod slash_commands;
 pub mod clipboard;
 pub mod provider;
 pub mod relay_stations;
+pub mod relay_adapters;

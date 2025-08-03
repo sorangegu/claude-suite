@@ -28,7 +28,7 @@ import { SlashCommandsManager } from "./SlashCommandsManager";
 import { LanguageSelector } from "./LanguageSelector";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useTheme } from "@/contexts/ThemeContext";
-import ProviderManager from "./ProviderManager";
+// import ProviderManager from "./ProviderManager";
 
 interface SettingsProps {
   /**
@@ -435,14 +435,14 @@ export const Settings: React.FC<SettingsProps> = ({
       ) : (
         <div className="flex-1 overflow-y-auto p-4">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid grid-cols-9 w-full">
+            <TabsList className="grid grid-cols-8 w-full">
               <TabsTrigger value="general">{t('settings.general')}</TabsTrigger>
               <TabsTrigger value="permissions">{t('common.permissions')}</TabsTrigger>
               <TabsTrigger value="environment">{t('common.environment')}</TabsTrigger>
               <TabsTrigger value="advanced">{t('common.advanced')}</TabsTrigger>
               <TabsTrigger value="hooks">{t('common.hooks')}</TabsTrigger>
               <TabsTrigger value="commands">{t('common.commands')}</TabsTrigger>
-              <TabsTrigger value="provider">{t('common.provider')}</TabsTrigger>
+              {/* <TabsTrigger value="provider">{t('common.provider')}</TabsTrigger> */}
               <TabsTrigger value="storage">{t('settings.storage')}</TabsTrigger>
             </TabsList>
             
@@ -905,8 +905,8 @@ export const Settings: React.FC<SettingsProps> = ({
                       {t('common.rawSettingsDescription')}
                     </p>
                     
-                    {/* Provider Status in Raw Settings */}
-                    {settings?.env && (
+                    {/* Provider Status in Raw Settings - Hidden */}
+                    {/* {settings?.env && (
                       Object.keys(settings.env).some(key => key.startsWith('ANTHROPIC_')) ? (
                         <div className="mt-4 p-3 rounded-md bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
                           <div className="flex items-center gap-2 mb-2">
@@ -946,7 +946,7 @@ export const Settings: React.FC<SettingsProps> = ({
                           </p>
                         </div>
                       )
-                    )}
+                    )} */}
                   </div>
                 </div>
               </Card>
@@ -984,10 +984,10 @@ export const Settings: React.FC<SettingsProps> = ({
               </Card>
             </TabsContent>
             
-            {/* Provider Tab */}
-            <TabsContent value="provider">
+            {/* Provider Tab - Hidden */}
+            {/* <TabsContent value="provider">
               <ProviderManager onBack={() => {}} onProviderChanged={loadSettings} />
-            </TabsContent>
+            </TabsContent> */}
             
             {/* Storage Tab */}
             <TabsContent value="storage">

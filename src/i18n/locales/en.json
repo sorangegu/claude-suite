@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Claude Workbench",
+    "title": "Claude Suite",
     "subtitle": "Professional desktop application and toolkit for Claude CLI"
   },
   "navigation": {
@@ -1016,6 +1016,7 @@
     "adapters": {
       "newapi": "NewAPI",
       "oneapi": "OneAPI",
+      "yourapi": "YourAPI",
       "custom": "Custom"
     },
     "authMethods": {
