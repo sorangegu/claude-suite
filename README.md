@@ -35,7 +35,7 @@
 
 ### 系统要求
 
-- **操作系统**: Windows 10/11 (64位)
+- **操作系统**: Windows 10/11 (64位)、macOS 10.15+、Linux (Ubuntu 18.04+)
 - **Node.js**: 18.0+ (推荐 LTS 版本)
 - **Claude CLI**: 需要预先安装 Claude CLI
 
@@ -43,10 +43,13 @@
 
 #### 方式一：下载预构建版本 (推荐)
 1. 前往 [Releases 页面](https://github.com/xinhai-ai/claude-suite/releases)
-2. 下载 Windows 安装包：
-   - `Claude Workbench_x.x.x_x64-setup.exe` (NSIS 安装包)
-   - `Claude Workbench_x.x.x_x64_en-US.msi` (MSI 安装包)
+2. 根据操作系统下载对应安装包：
+   - **Windows**: `Claude-Suite_x.x.x_x64-setup.exe` 或 `.msi` 文件
+   - **macOS**: `Claude-Suite_x.x.x_x64.dmg` 文件 ([安装说明](MACOS_INSTALL.md))
+   - **Linux**: `Claude-Suite_x.x.x_amd64.AppImage` 或 `.deb` 文件
 3. 运行安装程序并完成安装
+
+> **macOS 用户注意**: 由于应用未签名，首次运行需要在系统偏好设置中允许。详见 [macOS 安装指南](MACOS_INSTALL.md)。
 
 #### 方式二：从源代码构建
 ```bash

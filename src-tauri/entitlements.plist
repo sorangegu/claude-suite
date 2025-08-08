@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Allow file system access beyond sandbox -->
+    <key>com.apple.security.files.user-selected.read-write</key>
+    <true/>
+    
+    <!-- Allow reading files outside of sandbox -->
+    <key>com.apple.security.files.downloads.read-write</key>
+    <true/>
+    
+    <!-- Allow access to system binaries -->
+    <key>com.apple.security.temporary-exception.files.absolute-path.read-only</key>
+    <array>
+        <string>/usr/local/bin/</string>
+        <string>/opt/homebrew/bin/</string>
+        <string>/usr/bin/</string>
+        <string>/bin/</string>
+        <string>/Applications/</string>
+        <string>/opt/local/bin/</string>
+        <string>/Library/Developer/CommandLineTools/usr/bin/</string>
+        <string>/Developer/usr/bin/</string>
+    </array>
+    
+    <!-- Allow executing system binaries -->
+    <key>com.apple.security.temporary-exception.files.absolute-path.read-write</key>
+    <array>
+        <string>/usr/local/bin/claude</string>
+        <string>/opt/homebrew/bin/claude</string>
+        <string>/usr/bin/claude</string>
+        <string>/bin/claude</string>
+    </array>
+    
+    <!-- Allow network access for Claude CLI -->
+    <key>com.apple.security.network.client</key>
+    <true/>
+    
+    <!-- Allow outgoing network connections -->
+    <key>com.apple.security.network.server</key>
+    <true/>
+    
+    <!-- Allow spawning child processes -->
+    <key>com.apple.security.cs.allow-jit</key>
+    <true/>
+    
+    <!-- Allow unsigned executable memory -->
+    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+    <true/>
+    
+    <!-- Allow dyld environment variables -->
+    <key>com.apple.security.cs.allow-dyld-environment-variables</key>
+    <true/>
+    
+    <!-- Disable library validation for compatibility -->
+    <key>com.apple.security.cs.disable-library-validation</key>
+    <true/>
+    
+    <!-- Allow access to user's home directory -->
+    <key>com.apple.security.files.user-selected.read-write</key>
+    <true/>
+    
+    <!-- Allow access to application support directory -->
+    <key>com.apple.security.application-groups</key>
+    <array>
+        <string>claude.workbench.app</string>
+    </array>
+</dict>
+</plist>

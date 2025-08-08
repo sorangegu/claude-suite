@@ -29,22 +29,7 @@
   },
   "plugins": {
     "fs": {
-      "scope": [
-        "$HOME/**",
-        "$TEMP/**",
-        "$TMP/**"
-      ],
-      "allow": [
-        "readFile",
-        "writeFile",
-        "readDir",
-        "copyFile",
-        "createDir",
-        "removeDir",
-        "removeFile",
-        "renameFile",
-        "exists"
-      ]
+      "requireLiteralLeadingDot": false
     },
     "shell": {
       "open": true
@@ -52,19 +37,25 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["msi", "nsis"],
+    "targets": "all",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
       "icons/icon.ico",
+      "icons/icon.icns",
       "icons/icon.png"
     ],
     "resources": [],
     "externalBin": [],
     "copyright": "",
     "category": "DeveloperTool",
-    "shortDescription": "Professional GUI Toolkit for Claude CLI (Windows Only)",
-    "longDescription": "Claude Suite is a professional desktop application and comprehensive toolkit for Claude CLI, designed specifically for Windows users. Provides an intuitive interface for AI-powered development workflows, project management, and advanced Claude interactions."
+    "shortDescription": "Professional GUI Toolkit for Claude CLI",
+    "longDescription": "Claude Suite is a professional desktop application and comprehensive toolkit for Claude CLI. Provides an intuitive interface for AI-powered development workflows, project management, and advanced Claude interactions.",
+    "macOS": {
+      "entitlements": "entitlements.plist",
+      "hardenedRuntime": false,
+      "signingIdentity": null
+    }
   }
 }

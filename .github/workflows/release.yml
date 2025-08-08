@@ -1,0 +1,96 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v1.0.0)'
+        required: true
+        type: string
+      prerelease:
+        description: 'Mark as pre-release'
+        required: false
+        default: false
+        type: boolean
+      release_notes:
+        description: 'Custom release notes (markdown supported)'
+        required: false
+        type: string
+        default: ''
+      include_changelog:
+        description: 'Include automatic changelog'
+        required: false
+        default: true
+        type: boolean
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-and-release:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [macos-latest, ubuntu-latest, windows-latest]
+
+    runs-on: ${{ matrix.platform }}
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install dependencies (ubuntu only)
+      if: matrix.platform == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y pkg-config libwebkit2gtk-4.1-dev libgtk-3-dev libappindicator3-dev librsvg2-dev patchelf
+
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Rust cache
+      uses: swatinem/rust-cache@v2
+      with:
+        workspaces: './src-tauri -> target'
+
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: latest
+
+    - name: Install frontend dependencies
+      run: bun install
+
+    - name: Build frontend
+      run: bun run build
+
+    - name: Build Tauri app
+      uses: tauri-apps/tauri-action@v0
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # Disable code signing for unsigned builds
+        TAURI_SIGNING_PRIVATE_KEY: ""
+        TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
+      with:
+        tagName: ${{ github.event.inputs.version }}
+        releaseName: 'Claude Suite ${{ github.event.inputs.version }}'
+        releaseBody: |
+          ${{ github.event.inputs.release_notes != '' && github.event.inputs.release_notes || format('## 🚀 Claude Suite {0}
+
+          {1}', github.event.inputs.version, github.event.inputs.include_changelog && '### ✨ 更新内容
+          详见下方 Assets 中的变更日志或访问仓库查看完整提交历史。' || '') }}
+          
+          ### 📦 下载说明
+          - **Windows**: 下载 `.msi` 或 `.exe` 安装包
+          - **macOS**: 下载 `.dmg` 文件
+          - **Linux**: 下载 `.AppImage` 或 `.deb` 文件
+          
+          ### 🔧 构建信息
+          - 构建时间: ${{ github.run_started_at }}
+          - 提交: ${{ github.sha }}
+          
+          ${{ github.event.inputs.include_changelog && format('---
+          Full Changelog: https://github.com/{0}/compare/{1}...HEAD', github.repository, github.event.inputs.version) || '' }}
+        releaseDraft: false
+        prerelease: ${{ github.event.inputs.prerelease }}
+        tauriScript: bun run tauri
