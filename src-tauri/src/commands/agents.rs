@@ -1566,12 +1566,22 @@ pub async fn cleanup_finished_processes(db: State<'_, AgentDb>) -> Result<Vec<i6
         // Check if the process is still running
         let is_running = if cfg!(target_os = "windows") {
             // On Windows, use tasklist to check if process exists
-            use std::os::windows::process::CommandExt;
-            match std::process::Command::new("tasklist")
-                .args(["/FI", &format!("PID eq {}", pid)])
-                .args(["/FO", "CSV"])
-                .creation_flags(0x08000000) // CREATE_NO_WINDOW
-                .output()
+            #[cfg(target_os = "windows")]
+            {
+                use std::os::windows::process::CommandExt;
+                match std::process::Command::new("tasklist")
+                    .args(["/FI", &format!("PID eq {}", pid)])
+                    .args(["/FO", "CSV"])
+                    .creation_flags(0x08000000) // CREATE_NO_WINDOW
+                    .output()
+            }
+            #[cfg(not(target_os = "windows"))]
+            {
+                // This branch should never be reached due to the outer if condition
+                match std::process::Command::new("echo")
+                    .arg("Windows command on non-Windows system")
+                    .output()
+            }
             {
                 Ok(output) => {
                     let output_str = String::from_utf8_lossy(&output.stdout);
