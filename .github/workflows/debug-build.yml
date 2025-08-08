@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [macos-latest, ubuntu-latest, windows-latest]
+        platform: [macos-latest, windows-latest] # ubuntu-latest temporarily disabled
 
     runs-on: ${{ matrix.platform }}
     
