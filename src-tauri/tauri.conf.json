@@ -29,7 +29,20 @@
   },
   "plugins": {
     "fs": {
-      "requireLiteralLeadingDot": false
+      "requireLiteralLeadingDot": false,
+      "scope": [
+        "$HOME/**",
+        "$TEMP/**",
+        "$TMP/**",
+        "/usr/local/bin/**",
+        "/opt/homebrew/bin/**",
+        "/usr/bin/**",
+        "/bin/**",
+        "/Applications/**",
+        "/opt/local/bin/**",
+        "/Library/Developer/CommandLineTools/usr/bin/**",
+        "/Developer/usr/bin/**"
+      ]
     },
     "shell": {
       "open": true
