@@ -1574,20 +1574,18 @@ pub async fn cleanup_finished_processes(db: State<'_, AgentDb>) -> Result<Vec<i6
                     .args(["/FO", "CSV"])
                     .creation_flags(0x08000000) // CREATE_NO_WINDOW
                     .output()
+                {
+                    Ok(output) => {
+                        let output_str = String::from_utf8_lossy(&output.stdout);
+                        output_str.lines().count() > 1 // Header + process line if exists
+                    }
+                    Err(_) => false,
+                }
             }
             #[cfg(not(target_os = "windows"))]
             {
                 // This branch should never be reached due to the outer if condition
-                match std::process::Command::new("echo")
-                    .arg("Windows command on non-Windows system")
-                    .output()
-            }
-            {
-                Ok(output) => {
-                    let output_str = String::from_utf8_lossy(&output.stdout);
-                    output_str.lines().count() > 1 // Header + process line if exists
-                }
-                Err(_) => false,
+                false
             }
         } else {
             // On Unix-like systems, use kill -0 to check if process exists
